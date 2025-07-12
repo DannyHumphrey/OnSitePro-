@@ -61,7 +61,7 @@ export default function FormScreen({ route, navigation }: Props) {
   return (
     <SafeAreaView style={{ flex: 1 }}>
       <ThemedView style={{ flex: 1 }}>
-        <Button title="Back" onPress={() => navigation.goBack()} />
+        <Button title="Back" onPress={() => navigation.navigate('Dashboard')} />
         <Button
           title="Create New Form"
           onPress={() => navigation.navigate('CreateForm')}

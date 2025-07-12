@@ -23,10 +23,22 @@ export default function DashboardScreen() {
   return (
     <SafeAreaView style={{ flex: 1 }}>
       <ScrollView contentContainerStyle={styles.container}>
-        <Button title="Inbox" onPress={() => navigation.navigate('Inbox')} />
-        <Button title="Drafts" onPress={() => navigation.navigate('Drafts')} />
-        <Button title="Outbox" onPress={() => navigation.navigate('Outbox')} />
-        <Button title="Sent" onPress={() => navigation.navigate('Sent')} />
+        <Button
+          title="Inbox"
+          onPress={() => navigation.navigate('Tabs', { screen: 'Inbox' })}
+        />
+        <Button
+          title="Drafts"
+          onPress={() => navigation.navigate('Tabs', { screen: 'Drafts' })}
+        />
+        <Button
+          title="Outbox"
+          onPress={() => navigation.navigate('Tabs', { screen: 'Outbox' })}
+        />
+        <Button
+          title="Sent"
+          onPress={() => navigation.navigate('Tabs', { screen: 'Sent' })}
+        />
         <Button
           title="Create New Form"
           onPress={() => navigation.navigate('Form', { schema: demoSchema })}
