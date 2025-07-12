@@ -1,4 +1,4 @@
-import { DarkTheme, DefaultTheme, NavigationContainer } from '@react-navigation/native';
+import { DarkTheme, DefaultTheme, NavigationContainer, getFocusedRouteNameFromRoute } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -10,6 +10,7 @@ import InboxScreen from '@/screens/InboxScreen';
 import DraftsScreen from '@/screens/DraftsScreen';
 import OutboxScreen from '@/screens/OutboxScreen';
 import SentScreen from '@/screens/SentScreen';
+import DashboardScreen from '@/screens/DashboardScreen';
 import { Colors } from '@/constants/Colors';
 import { HapticTab } from '@/components/HapticTab';
 import TabBarBackground from '@/components/ui/TabBarBackground';
@@ -24,7 +25,8 @@ export type TabParamList = {
 };
 
 export type RootStackParamList = {
-  Tabs: undefined;
+  Dashboard: undefined;
+  Tabs: { screen?: keyof TabParamList } | undefined;
   CreateForm: undefined;
   Form: {
     schema: FormSchema;
@@ -99,12 +101,34 @@ function MainTabs() {
   );
 }
 
+function getTabTitle(route: any) {
+  const routeName = getFocusedRouteNameFromRoute(route) ?? 'Drafts';
+  switch (routeName) {
+    case 'Inbox':
+      return 'Inbox';
+    case 'Outbox':
+      return 'Outbox';
+    case 'Sent':
+      return 'Sent';
+    default:
+      return 'Drafts';
+  }
+}
+
 export default function AppNavigator() {
   const colorScheme = useColorScheme();
   return (
     <NavigationContainer theme={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack.Navigator screenOptions={{ headerShown: false }} initialRouteName="Tabs">
-        <Stack.Screen name="Tabs" component={MainTabs} />
+      <Stack.Navigator screenOptions={{ headerShown: false }} initialRouteName="Dashboard">
+        <Stack.Screen name="Dashboard" component={DashboardScreen} />
+        <Stack.Screen
+          name="Tabs"
+          component={MainTabs}
+          options={({ route }) => ({
+            headerShown: true,
+            headerTitle: getTabTitle(route),
+          })}
+        />
         <Stack.Screen name="CreateForm" component={CreateFormScreen} />
         <Stack.Screen name="Form" component={FormScreen} />
       </Stack.Navigator>
