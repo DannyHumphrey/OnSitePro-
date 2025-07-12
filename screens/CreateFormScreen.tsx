@@ -14,7 +14,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { ThemedText } from '@/components/ThemedText';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
-import { RootStackParamList } from '@/navigation/AppNavigator';
+import { RootStackParamList } from '@/navigation/types';
 import type { FormSchema } from '@/components/FormRenderer';
 
 export default function CreateFormScreen() {
