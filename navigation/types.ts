@@ -8,6 +8,7 @@ export type TabParamList = {
 };
 
 export type RootStackParamList = {
+  Login: undefined;
   Dashboard: undefined;
   Tabs: { screen?: keyof TabParamList } | undefined;
   CreateForm: undefined;
