@@ -1,17 +1,17 @@
-import { Button, SafeAreaView, Alert } from 'react-native';
-import { useRef, useEffect, useState } from 'react';
-import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { v4 as uuidv4 } from 'uuid';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useEffect, useRef, useState } from 'react';
+import { Alert, Button, SafeAreaView } from 'react-native';
+import { v4 as uuidv4 } from 'uuid';
 
-import { ThemedView } from '@/components/ThemedView';
-import { ThemedText } from '@/components/ThemedText';
 import FormRenderer, { type FormRendererRef } from '@/components/FormRenderer';
+import { ThemedText } from '@/components/ThemedText';
+import { ThemedView } from '@/components/ThemedView';
 import { RootStackParamList } from '@/navigation/types';
 import {
+  getDraftById,
   saveDraft,
   type DraftForm,
-  getDraftById,
 } from '@/services/draftService';
 
 type OutboxForm = Omit<DraftForm, 'status'> & { status: 'complete' };
@@ -145,10 +145,6 @@ export default function FormScreen({ route, navigation }: Props) {
     <SafeAreaView style={{ flex: 1 }}>
       <ThemedView style={{ flex: 1 }}>
         <Button title="Back" onPress={() => navigation.navigate('Dashboard')} />
-        <Button
-          title="Create New Form"
-          onPress={() => navigation.navigate('CreateForm')}
-        />
         {formName && (
           <ThemedText type="title" style={{ padding: 16 }}>
             {formName}
