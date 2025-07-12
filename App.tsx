@@ -1,22 +1,21 @@
-import { DarkTheme, DefaultTheme, NavigationContainer, getFocusedRouteNameFromRoute } from '@react-navigation/native';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { MaterialIcons } from '@expo/vector-icons';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { DarkTheme, DefaultTheme, NavigationContainer, getFocusedRouteNameFromRoute } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Platform } from 'react-native';
 
-import DashboardScreen from '@/screens/DashboardScreen';
-import LoginScreen from '@/screens/LoginScreen';
-import FormScreen from '@/screens/FormScreen';
-import CreateFormScreen from '@/screens/CreateFormScreen';
-import InboxScreen from '@/screens/InboxScreen';
-import DraftsScreen from '@/screens/DraftsScreen';
-import OutboxScreen from '@/screens/OutboxScreen';
-import SentScreen from '@/screens/SentScreen';
-import { Colors } from '@/constants/Colors';
-import { useColorScheme } from '@/hooks/useColorScheme';
 import { HapticTab } from '@/components/HapticTab';
 import TabBarBackground from '@/components/ui/TabBarBackground';
-import type { TabParamList, RootStackParamList } from '@/navigation/types';
+import { Colors } from '@/constants/Colors';
+import { useColorScheme } from '@/hooks/useColorScheme';
+import type { RootStackParamList, TabParamList } from '@/navigation/types';
+import CreateFormScreen from '@/screens/CreateFormScreen';
+import DraftsScreen from '@/screens/DraftsScreen';
+import FormScreen from '@/screens/FormScreen';
+import InboxScreen from '@/screens/InboxScreen';
+import LoginScreen from '@/screens/LoginScreen';
+import OutboxScreen from '@/screens/OutboxScreen';
+import SentScreen from '@/screens/SentScreen';
 
 const Tab = createBottomTabNavigator<TabParamList>();
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -106,7 +105,6 @@ export default function App() {
         initialRouteName={INITIAL_ROUTE_NAME}
       >
         <Stack.Screen name="Login" component={LoginScreen} />
-        <Stack.Screen name="Dashboard" component={DashboardScreen} />
         <Stack.Screen
           name="Tabs"
           component={MainTabs}

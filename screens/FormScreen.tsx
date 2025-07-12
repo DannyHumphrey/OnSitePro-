@@ -144,7 +144,7 @@ export default function FormScreen({ route, navigation }: Props) {
   return (
     <SafeAreaView style={{ flex: 1 }}>
       <ThemedView style={{ flex: 1 }}>
-        <Button title="Back" onPress={() => navigation.navigate('Dashboard')} />
+        <Button title="Back" onPress={() => navigation.navigate('Tabs', { screen: 'Inbox' })} />
         {formName && (
           <ThemedText type="title" style={{ padding: 16 }}>
             {formName}

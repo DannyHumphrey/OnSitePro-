@@ -1,3 +1,5 @@
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useState } from 'react';
 import {
   Alert,
@@ -10,8 +12,6 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
@@ -27,7 +27,7 @@ export default function LoginScreen() {
 
   const handleLogin = () => {
     if (username === 'demo' && password === 'password') {
-      navigation.navigate('Dashboard');
+      navigation.navigate('Tabs', { screen: 'Drafts' });
     } else {
       Alert.alert('Invalid Login', 'Username or password is incorrect.');
     }
