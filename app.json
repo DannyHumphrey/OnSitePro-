@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "OnSitePro",
-    "slug": "OnSitePro",
+    "slug": "onsite-pro",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -16,7 +16,8 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "package": "uk.co.c365.onsitepro"
     },
     "web": {
       "bundler": "metro",
@@ -33,6 +34,12 @@
           "backgroundColor": "#ffffff"
         }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "a58b830f-5847-477d-a6b9-39a16b38b6ff"
+      }
+    },
+    "owner": "dhumphrey-c365"
   }
 }
