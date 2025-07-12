@@ -8,9 +8,11 @@ import DraftsScreen from '@/screens/DraftsScreen';
 import OutboxScreen from '@/screens/OutboxScreen';
 import SentScreen from '@/screens/SentScreen';
 
+import type { FormSchema } from '@/components/FormRenderer';
+
 export type RootStackParamList = {
   Dashboard: undefined;
-  Form: undefined;
+  Form: { schema: FormSchema };
   Inbox: undefined;
   Drafts: undefined;
   Outbox: undefined;
