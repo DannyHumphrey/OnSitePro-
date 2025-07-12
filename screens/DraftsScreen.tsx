@@ -8,19 +8,12 @@ import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { RootStackParamList } from '@/navigation/AppNavigator';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { FormSchema } from '@/components/FormRenderer';
 
 export default function DraftsScreen() {
   const navigation = useNavigation<
     NativeStackNavigationProp<RootStackParamList>
   >();
   const colorScheme = useColorScheme() ?? 'light';
-
-  const demoSchema: FormSchema = [
-    { type: 'text', label: 'Full Name', key: 'fullName', required: true },
-    { type: 'date', label: 'Date of Visit', key: 'visitDate' },
-    { type: 'photo', label: 'Take a Picture', key: 'photo' },
-  ];
 
   return (
     <ThemedView style={{ flex: 1 }}>
@@ -36,7 +29,7 @@ export default function DraftsScreen() {
             opacity: pressed ? 0.8 : 1,
           },
         ]}
-        onPress={() => navigation.navigate('Form', { schema: demoSchema })}
+        onPress={() => navigation.navigate('CreateForm')}
         accessibilityLabel="Create New Form">
         <MaterialIcons name="add" size={28} color="#fff" />
       </Pressable>
