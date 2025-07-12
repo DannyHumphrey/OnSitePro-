@@ -5,6 +5,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { Platform } from 'react-native';
 
 import DashboardScreen from '@/screens/DashboardScreen';
+import LoginScreen from '@/screens/LoginScreen';
 import FormScreen from '@/screens/FormScreen';
 import CreateFormScreen from '@/screens/CreateFormScreen';
 import InboxScreen from '@/screens/InboxScreen';
@@ -19,7 +20,7 @@ import type { TabParamList, RootStackParamList } from '@/navigation/types';
 
 const Tab = createBottomTabNavigator<TabParamList>();
 const Stack = createNativeStackNavigator<RootStackParamList>();
-const INITIAL_ROUTE_NAME = 'Dashboard';
+const INITIAL_ROUTE_NAME = 'Login';
 
 function MainTabs() {
   const colorScheme = useColorScheme();
@@ -104,6 +105,7 @@ export default function App() {
         screenOptions={{ headerShown: false }}
         initialRouteName={INITIAL_ROUTE_NAME}
       >
+        <Stack.Screen name="Login" component={LoginScreen} />
         <Stack.Screen name="Dashboard" component={DashboardScreen} />
         <Stack.Screen
           name="Tabs"
