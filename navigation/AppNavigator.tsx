@@ -5,6 +5,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { Platform } from 'react-native';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import FormScreen from '@/screens/FormScreen';
+import CreateFormScreen from '@/screens/CreateFormScreen';
 import InboxScreen from '@/screens/InboxScreen';
 import DraftsScreen from '@/screens/DraftsScreen';
 import OutboxScreen from '@/screens/OutboxScreen';
@@ -24,7 +25,8 @@ export type TabParamList = {
 
 export type RootStackParamList = {
   Tabs: undefined;
-  Form: { schema: FormSchema };
+  CreateForm: undefined;
+  Form: { schema: FormSchema; formType?: string; formName?: string };
 };
 
 const Tab = createBottomTabNavigator<TabParamList>();
@@ -97,6 +99,7 @@ export default function AppNavigator() {
     <NavigationContainer theme={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <Stack.Navigator screenOptions={{ headerShown: false }} initialRouteName="Tabs">
         <Stack.Screen name="Tabs" component={MainTabs} />
+        <Stack.Screen name="CreateForm" component={CreateFormScreen} />
         <Stack.Screen name="Form" component={FormScreen} />
       </Stack.Navigator>
     </NavigationContainer>
