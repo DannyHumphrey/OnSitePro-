@@ -4,18 +4,14 @@ import {
   ScrollView,
   StyleSheet,
 } from 'react-native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useNavigation } from '@react-navigation/native';
 
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
-import { RootStackParamList } from '@/navigation/AppNavigator';
 import type { FormSchema } from '@/components/FormRenderer';
 
 export default function DashboardScreen() {
-  const navigation = useNavigation<
-    NativeStackNavigationProp<RootStackParamList>
-  >();
+  const navigation = useNavigation();
   const colorScheme = useColorScheme() ?? 'light';
 
   const demoSchema: FormSchema = [
