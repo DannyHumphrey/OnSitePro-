@@ -2,7 +2,9 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { DarkTheme, DefaultTheme, NavigationContainer, getFocusedRouteNameFromRoute } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { Platform } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, Platform, View } from 'react-native';
 
 import { HapticTab } from '@/components/HapticTab';
 import TabBarBackground from '@/components/ui/TabBarBackground';
@@ -19,7 +21,6 @@ import SentScreen from '@/screens/SentScreen';
 
 const Tab = createBottomTabNavigator<TabParamList>();
 const Stack = createNativeStackNavigator<RootStackParamList>();
-const INITIAL_ROUTE_NAME = 'Login';
 
 function MainTabs() {
   const colorScheme = useColorScheme();
@@ -98,23 +99,50 @@ function getTabTitle(route: any) {
 
 export default function App() {
   const colorScheme = useColorScheme();
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    async function loadStatus() {
+      try {
+        const value = await AsyncStorage.getItem('auth:isLoggedIn');
+        setIsLoggedIn(value === 'true');
+      } catch {
+        setIsLoggedIn(false);
+      }
+    }
+    loadStatus();
+  }, []);
+
+  if (isLoggedIn === null) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator />
+      </View>
+    );
+  }
   return (
     <NavigationContainer theme={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack.Navigator
-        screenOptions={{ headerShown: false }}
-        initialRouteName={INITIAL_ROUTE_NAME}
-      >
-        <Stack.Screen name="Login" component={LoginScreen} />
-        <Stack.Screen
-          name="Tabs"
-          component={MainTabs}
-          options={({ route }) => ({
-            headerShown: true,
-            headerTitle: getTabTitle(route),
-          })}
-        />
-        <Stack.Screen name="CreateForm" component={CreateFormScreen} />
-        <Stack.Screen name="Form" component={FormScreen} />
+      <Stack.Navigator screenOptions={{ headerShown: false }}>
+        {isLoggedIn ? (
+          <>
+            <Stack.Screen
+              name="Tabs"
+              component={MainTabs}
+              options={({ route }) => ({
+                headerShown: true,
+                headerTitle: getTabTitle(route),
+              })}
+            />
+            <Stack.Screen name="CreateForm" component={CreateFormScreen} />
+            <Stack.Screen name="Form" component={FormScreen} />
+          </>
+        ) : (
+          <Stack.Screen name="Login">
+            {(props) => (
+              <LoginScreen {...props} onLogin={() => setIsLoggedIn(true)} />
+            )}
+          </Stack.Screen>
+        )}
       </Stack.Navigator>
     </NavigationContainer>
   );
