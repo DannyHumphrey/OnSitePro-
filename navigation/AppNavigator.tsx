@@ -26,7 +26,13 @@ export type TabParamList = {
 export type RootStackParamList = {
   Tabs: undefined;
   CreateForm: undefined;
-  Form: { schema: FormSchema; formType?: string; formName?: string };
+  Form: {
+    schema: FormSchema;
+    formType?: string;
+    formName?: string;
+    data?: Record<string, any>;
+    draftId?: string;
+  };
 };
 
 const Tab = createBottomTabNavigator<TabParamList>();
