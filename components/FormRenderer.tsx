@@ -1,4 +1,9 @@
-import React, { forwardRef, useImperativeHandle, useState } from 'react';
+import React, {
+  forwardRef,
+  useImperativeHandle,
+  useState,
+  useEffect,
+} from 'react';
 import { Button, Image, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
@@ -14,6 +19,7 @@ export type FormSchema = FormField[];
 
 export type FormRendererProps = {
   schema: FormSchema;
+  initialData?: Record<string, any>;
 };
 
 export type FormRendererRef = {
@@ -21,13 +27,23 @@ export type FormRendererRef = {
 };
 
 export const FormRenderer = forwardRef<FormRendererRef, FormRendererProps>(
-  ({ schema }, ref) => {
+  ({ schema, initialData }, ref) => {
     const initialState: Record<string, any> = {};
     schema.forEach((field) => {
-      initialState[field.key] = field.type === 'photo' ? undefined : '';
+      if (initialData && field.key in initialData) {
+        initialState[field.key] = initialData[field.key];
+      } else {
+        initialState[field.key] = field.type === 'photo' ? undefined : '';
+      }
     });
     const [formState, setFormState] = useState<Record<string, any>>(initialState);
     const [activeDateKey, setActiveDateKey] = useState<string | null>(null);
+
+    useEffect(() => {
+      if (initialData) {
+        setFormState((prev) => ({ ...prev, ...initialData }));
+      }
+    }, [initialData]);
 
     useImperativeHandle(ref, () => ({
       getFormData: () => formState,
