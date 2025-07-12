@@ -39,6 +39,10 @@ export type RootStackParamList = {
 
 const Tab = createBottomTabNavigator<TabParamList>();
 const Stack = createNativeStackNavigator<RootStackParamList>();
+/**
+ * The name of the first screen shown when the app starts.
+ */
+const INITIAL_ROUTE_NAME = 'Dashboard';
 
 function MainTabs() {
   const colorScheme = useColorScheme();
@@ -119,7 +123,11 @@ export default function AppNavigator() {
   const colorScheme = useColorScheme();
   return (
     <NavigationContainer theme={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack.Navigator screenOptions={{ headerShown: false }} initialRouteName="Dashboard">
+      {/* Start the app on the Dashboard screen */}
+      <Stack.Navigator
+        screenOptions={{ headerShown: false }}
+        initialRouteName={INITIAL_ROUTE_NAME}
+      >
         <Stack.Screen name="Dashboard" component={DashboardScreen} />
         <Stack.Screen
           name="Tabs"
