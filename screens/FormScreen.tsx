@@ -6,7 +6,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { ThemedView } from '@/components/ThemedView';
 import { ThemedText } from '@/components/ThemedText';
 import FormRenderer, { type FormRendererRef } from '@/components/FormRenderer';
-import { RootStackParamList } from '@/navigation/AppNavigator';
+import { RootStackParamList } from '@/navigation/types';
 import {
   saveDraft,
   type DraftForm,
