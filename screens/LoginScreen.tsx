@@ -24,11 +24,35 @@ export default function LoginScreen({ onLogin }: Props) {
   const [password, setPassword] = useState('');
 
   const handleLogin = async () => {
-    if (username === 'demo' && password === 'password') {
-      await AsyncStorage.setItem('auth:isLoggedIn', 'true');
-      onLogin();
-    } else {
-      Alert.alert('Invalid Login', 'Username or password is incorrect.');
+    try {
+      const response = await fetch(
+        'https://uat.onsite-lite.co.uk/api/Authentication/login',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            Username: username,
+            Password: password,
+            ResetCode: '',
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Request failed');
+      }
+
+      const data = (await response.json()) as { token?: string };
+
+      if (data.token) {
+        await AsyncStorage.setItem('auth:token', data.token);
+        await AsyncStorage.setItem('auth:isLoggedIn', 'true');
+        onLogin();
+      } else {
+        Alert.alert('Invalid Login', 'Username or password is incorrect.');
+      }
+    } catch (error) {
+      Alert.alert('Login Failed', 'An unexpected error occurred.');
     }
   };
 
