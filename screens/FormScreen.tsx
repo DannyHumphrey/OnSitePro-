@@ -1,10 +1,19 @@
-import { ThemedView } from '@/components/ThemedView';
-import { ThemedText } from '@/components/ThemedText';
+import { SafeAreaView } from 'react-native';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
 
-export default function FormScreen() {
+import { ThemedView } from '@/components/ThemedView';
+import FormRenderer from '@/components/FormRenderer';
+import { RootStackParamList } from '@/navigation/AppNavigator';
+
+type Props = NativeStackScreenProps<RootStackParamList, 'Form'>;
+
+export default function FormScreen({ route }: Props) {
+  const { schema } = route.params;
   return (
-    <ThemedView style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-      <ThemedText type="title">Form</ThemedText>
-    </ThemedView>
+    <SafeAreaView style={{ flex: 1 }}>
+      <ThemedView style={{ flex: 1 }}>
+        <FormRenderer schema={schema} />
+      </ThemedView>
+    </SafeAreaView>
   );
 }
