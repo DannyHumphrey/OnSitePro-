@@ -20,6 +20,7 @@ import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
+import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 import { DraftsStackParamList } from '@/navigation/types';
 import {
   getDraftById,
@@ -42,6 +43,7 @@ export default function FormScreen({ route, navigation }: Props) {
   } = route.params;
   const formRef = useRef<FormRendererRef>(null);
   const colorScheme = useColorScheme() ?? 'light';
+  const isOnline = useNetworkStatus();
   const [existingDraft, setExistingDraft] = useState<DraftForm | null>(null);
   const [initialData, setInitialData] = useState<Record<string, any> | undefined>(data);
   const [menuVisible, setMenuVisible] = useState(false);
@@ -213,12 +215,13 @@ export default function FormScreen({ route, navigation }: Props) {
             </TouchableOpacity>
           </View>
         )}
-        <FormRenderer
-          ref={formRef}
-          schema={schema}
-          initialData={initialData}
-          readOnly={readOnly}
-        />
+
+        {!isOnline && (
+          <ThemedText style={styles.offlineText}>
+            You are offline. Submissions are disabled.
+          </ThemedText>
+        )}
+        <FormRenderer ref={formRef} schema={schema} initialData={initialData} readOnly={readOnly}/>
         <Modal
           transparent
           animationType="slide"
@@ -270,9 +273,15 @@ export default function FormScreen({ route, navigation }: Props) {
         </Modal>
         <View style={styles.buttonRow}>
           <View style={styles.buttonWrapper}>
-            <Button title="Back" onPress={() => navigation.popToTop()} />
+            <Button
+              title="Back"
+              onPress={() => navigation.popToTop()}
+            />
           </View>
-          {!readOnly && (
+          <View style={styles.buttonWrapper}>
+            <Button title="Save as Draft" onPress={handleSaveDraft} />
+          </View>
+        {!readOnly && (
             <>
               <View style={styles.buttonWrapper}>
                 <Button title="Save as Draft" onPress={handleSaveDraft} />
@@ -282,10 +291,12 @@ export default function FormScreen({ route, navigation }: Props) {
                   title="Submit"
                   onPress={handleSubmitForm}
                   color={Colors[colorScheme].tint}
+                  disabled={!isOnline}
                 />
               </View>
             </>
           )}
+        </View>
         </View>
       </ThemedView>
     </SafeAreaView>
@@ -346,5 +357,10 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     borderRadius: 4,
+  },
+  offlineText: {
+    color: 'red',
+    textAlign: 'center',
+    marginBottom: 8,
   },
 });
