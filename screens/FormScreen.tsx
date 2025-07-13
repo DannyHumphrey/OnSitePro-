@@ -1,6 +1,6 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { useEffect, useRef, useState } from 'react';
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { useEffect, useRef, useState } from "react";
 import {
   Alert,
   Button,
@@ -11,43 +11,47 @@ import {
   TouchableOpacity,
   ScrollView,
   Image,
-} from 'react-native';
-import { v4 as uuidv4 } from 'uuid';
+  KeyboardAvoidingView,
+  Platform,
+} from "react-native";
+import { v4 as uuidv4 } from "uuid";
 
-import FormRenderer, { type FormRendererRef } from '@/components/FormRenderer';
-import { IconSymbol } from '@/components/ui/IconSymbol';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
-import { Colors } from '@/constants/Colors';
-import { useColorScheme } from '@/hooks/useColorScheme';
-import { useNetworkStatus } from '@/hooks/useNetworkStatus';
-import { DraftsStackParamList } from '@/navigation/types';
+import FormRenderer, { type FormRendererRef } from "@/components/FormRenderer";
+import { IconSymbol } from "@/components/ui/IconSymbol";
+import { ThemedText } from "@/components/ThemedText";
+import { ThemedView } from "@/components/ThemedView";
+import { Colors } from "@/constants/Colors";
+import { useColorScheme } from "@/hooks/useColorScheme";
+import { useNetworkStatus } from "@/hooks/useNetworkStatus";
+import { DraftsStackParamList } from "@/navigation/types";
 import {
   getDraftById,
   saveDraft,
   type DraftForm,
-} from '@/services/draftService';
+} from "@/services/draftService";
 
-type OutboxForm = Omit<DraftForm, 'status'> & { status: 'complete' };
+type OutboxForm = Omit<DraftForm, "status"> & { status: "complete" };
 
-type Props = NativeStackScreenProps<DraftsStackParamList, 'FormScreen'>;
+type Props = NativeStackScreenProps<DraftsStackParamList, "FormScreen">;
 
 export default function FormScreen({ route, navigation }: Props) {
   const {
     schema,
     formName,
-    formType = 'demo',
+    formType = "demo",
     draftId,
     data,
     readOnly = false,
   } = route.params;
   const formRef = useRef<FormRendererRef>(null);
-  const colorScheme = useColorScheme() ?? 'light';
+  const colorScheme = useColorScheme() ?? "light";
   const isOnline = useNetworkStatus();
   const [existingDraft, setExistingDraft] = useState<DraftForm | null>(null);
-  const [initialData, setInitialData] = useState<Record<string, any> | undefined>(data);
+  const [initialData, setInitialData] = useState<
+    Record<string, any> | undefined
+  >(data);
   const [menuVisible, setMenuVisible] = useState(false);
-  const [menuTab, setMenuTab] = useState<'sections' | 'media'>('sections');
+  const [menuTab, setMenuTab] = useState<"sections" | "media">("sections");
 
   useEffect(() => {
     if (draftId) {
@@ -73,11 +77,11 @@ export default function FormScreen({ route, navigation }: Props) {
     } else {
       draft = {
         id: uuidv4(),
-        name: formName ?? 'Untitled Form',
+        name: formName ?? "Untitled Form",
         formType,
         schema,
         data,
-        status: 'draft',
+        status: "draft",
         isSynced: false,
         createdAt: timestamp,
         updatedAt: timestamp,
@@ -91,7 +95,7 @@ export default function FormScreen({ route, navigation }: Props) {
     try {
       const validation = formRef.current?.validateForm();
       if (validation && !validation.isValid) {
-        Alert.alert('Validation Error', 'Please fill all required fields.');
+        Alert.alert("Validation Error", "Please fill all required fields.");
         return;
       }
       const formData = formRef.current?.getFormData() ?? {};
@@ -104,10 +108,10 @@ export default function FormScreen({ route, navigation }: Props) {
         try {
           const loaded = await getDraftById(currentDraftId);
           if (loaded) {
-            draft = { ...loaded, status: 'complete' } as OutboxForm;
+            draft = { ...loaded, status: "complete" } as OutboxForm;
           }
         } catch (err) {
-          console.log('Error loading draft:', err);
+          console.log("Error loading draft:", err);
         }
       }
 
@@ -115,11 +119,11 @@ export default function FormScreen({ route, navigation }: Props) {
         id = uuidv4();
         draft = {
           id,
-          name: formName ?? 'Untitled Form',
+          name: formName ?? "Untitled Form",
           formType,
           schema,
           data: formData,
-          status: 'complete',
+          status: "complete",
           isSynced: false,
           createdAt: timestamp,
           updatedAt: timestamp,
@@ -128,7 +132,7 @@ export default function FormScreen({ route, navigation }: Props) {
         draft = {
           ...draft,
           data: formData,
-          status: 'complete',
+          status: "complete",
           updatedAt: timestamp,
         };
       }
@@ -142,40 +146,42 @@ export default function FormScreen({ route, navigation }: Props) {
 
       // update outbox index
       try {
-        const outboxRaw = await AsyncStorage.getItem('outbox:index');
+        const outboxRaw = await AsyncStorage.getItem("outbox:index");
         const outbox = outboxRaw ? (JSON.parse(outboxRaw) as string[]) : [];
         if (!outbox.includes(id)) {
           outbox.push(id);
-          await AsyncStorage.setItem('outbox:index', JSON.stringify(outbox));
+          await AsyncStorage.setItem("outbox:index", JSON.stringify(outbox));
         }
       } catch (err) {
-        console.log('Error updating outbox index:', err);
+        console.log("Error updating outbox index:", err);
       }
 
       if (currentDraftId) {
         // remove draft storage and index
         try {
           await AsyncStorage.removeItem(`draft:${currentDraftId}`);
-          const indexRaw = await AsyncStorage.getItem('drafts:index');
+          const indexRaw = await AsyncStorage.getItem("drafts:index");
           const index = indexRaw ? (JSON.parse(indexRaw) as string[]) : [];
           const newIndex = index.filter((d) => d !== currentDraftId);
-          await AsyncStorage.setItem('drafts:index', JSON.stringify(newIndex));
+          await AsyncStorage.setItem("drafts:index", JSON.stringify(newIndex));
         } catch (err) {
-          console.log('Error removing draft from storage:', err);
+          console.log("Error removing draft from storage:", err);
         }
       }
 
-      console.log('Form moved to outbox:', id);
+      console.log("Form moved to outbox:", id);
       navigation.popToTop();
     } catch (err) {
-      console.log('Error submitting form:', err);
-      Alert.alert('Error', 'Failed to submit form.');
+      console.log("Error submitting form:", err);
+      Alert.alert("Error", "Failed to submit form.");
     }
   };
 
   const sectionEntries = schema.flatMap((section) => {
     if (section.repeatable) {
-      const dataArr = formRef.current?.getFormData()[section.key] as any[] | undefined;
+      const dataArr = formRef.current?.getFormData()[section.key] as
+        | any[]
+        | undefined;
       const length = dataArr ? dataArr.length : 0;
       return Array.from({ length }).map((_, idx) => ({
         key: `${section.key}.${idx}`,
@@ -200,157 +206,190 @@ export default function FormScreen({ route, navigation }: Props) {
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
-      <ThemedView style={{ flex: 1 }}>
-        {formName && (
-          <View style={styles.header}>
-            <ThemedText type="title" style={{ flex: 1 }}>
-              {formName}
-            </ThemedText>
-            <TouchableOpacity onPress={() => setMenuVisible(true)}>
-              <IconSymbol
-                name="line.3.horizontal"
-                size={24}
-                color={Colors[colorScheme].text}
-              />
-            </TouchableOpacity>
-          </View>
-        )}
-
-        {!isOnline && (
-          <ThemedText style={styles.offlineText}>
-            You are offline. Submissions are disabled.
-          </ThemedText>
-        )}
-        <FormRenderer ref={formRef} schema={schema} initialData={initialData} readOnly={readOnly}/>
-        <Modal
-          transparent
-          animationType="slide"
-          visible={menuVisible}
-          onRequestClose={() => setMenuVisible(false)}>
-          <View style={styles.modalOverlay}>
-            <View style={[styles.drawer, { backgroundColor: Colors[colorScheme].background }]}>
-              <View style={styles.tabRow}>
-                <TouchableOpacity
-                  style={[styles.tabButton, menuTab === 'sections' && styles.activeTab]}
-                  onPress={() => setMenuTab('sections')}>
-                  <ThemedText>Sections</ThemedText>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.tabButton, menuTab === 'media' && styles.activeTab]}
-                  onPress={() => setMenuTab('media')}>
-                  <ThemedText>Media</ThemedText>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={80}
+      >
+        <ThemedView style={{ flex: 1 }}>
+          <ScrollView
+            contentContainerStyle={{ paddingBottom: 16 }}
+            keyboardShouldPersistTaps="handled"
+          >
+            {formName && (
+              <View style={styles.header}>
+                <ThemedText type="title" style={{ flex: 1 }}>
+                  {formName}
+                </ThemedText>
+                <TouchableOpacity onPress={() => setMenuVisible(true)}>
+                  <IconSymbol
+                    name="line.3.horizontal"
+                    size={24}
+                    color={Colors[colorScheme].text}
+                  />
                 </TouchableOpacity>
               </View>
-              {menuTab === 'sections' ? (
-                <ScrollView>
-                  {sectionEntries.map((item) => (
-                    <TouchableOpacity
-                      key={item.key}
-                      style={styles.menuItem}
-                      onPress={() => handleSectionPress(item.key)}>
-                      <ThemedText>{item.label}</ThemedText>
-                      {sectionErrors[item.key] && (
-                        <IconSymbol
-                          name="exclamationmark.circle.fill"
-                          size={16}
-                          color="red"
-                        />
-                      )}
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
-              ) : (
-                <ScrollView contentContainerStyle={styles.mediaList}>
-                  {photos.map((p) => (
-                    <TouchableOpacity key={p.key} onPress={() => handleMediaPress(p.key)}>
-                      <Image source={{ uri: p.uri }} style={styles.mediaThumb} />
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
-              )}
-            </View>
-          </View>
-        </Modal>
-        <View style={styles.buttonRow}>
-          <View style={styles.buttonWrapper}>
-            <Button
-              title="Back"
-              onPress={() => navigation.popToTop()}
+            )}
+
+            {!isOnline && (
+              <ThemedText style={styles.offlineText}>
+                You are offline. Submissions are disabled.
+              </ThemedText>
+            )}
+            <FormRenderer
+              ref={formRef}
+              schema={schema}
+              initialData={initialData}
+              readOnly={readOnly}
             />
-          </View>
-          <View style={styles.buttonWrapper}>
-            <Button title="Save as Draft" onPress={handleSaveDraft} />
-          </View>
-        {!readOnly && (
-            <>
+            <View style={styles.buttonRow}>
+              <View style={styles.buttonWrapper}>
+                <Button title="Back" onPress={() => navigation.popToTop()} />
+              </View>
               <View style={styles.buttonWrapper}>
                 <Button title="Save as Draft" onPress={handleSaveDraft} />
               </View>
-              <View style={styles.buttonWrapper}>
-                <Button
-                  title="Submit"
-                  onPress={handleSubmitForm}
-                  color={Colors[colorScheme].tint}
-                  disabled={!isOnline}
-                />
+              {!readOnly && (
+                <>
+                  <View style={styles.buttonWrapper}>
+                    <Button title="Save as Draft" onPress={handleSaveDraft} />
+                  </View>
+                  <View style={styles.buttonWrapper}>
+                    <Button
+                      title="Submit"
+                      onPress={handleSubmitForm}
+                      color={Colors[colorScheme].tint}
+                      disabled={!isOnline}
+                    />
+                  </View>
+                </>
+              )}
+            </View>
+          </ScrollView>
+          <Modal
+            transparent
+            animationType="slide"
+            visible={menuVisible}
+            onRequestClose={() => setMenuVisible(false)}
+          >
+            <View style={styles.modalOverlay}>
+              <View
+                style={[
+                  styles.drawer,
+                  { backgroundColor: Colors[colorScheme].background },
+                ]}
+              >
+                <View style={styles.tabRow}>
+                  <TouchableOpacity
+                    style={[
+                      styles.tabButton,
+                      menuTab === "sections" && styles.activeTab,
+                    ]}
+                    onPress={() => setMenuTab("sections")}
+                  >
+                    <ThemedText>Sections</ThemedText>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[
+                      styles.tabButton,
+                      menuTab === "media" && styles.activeTab,
+                    ]}
+                    onPress={() => setMenuTab("media")}
+                  >
+                    <ThemedText>Media</ThemedText>
+                  </TouchableOpacity>
+                </View>
+                {menuTab === "sections" ? (
+                  <ScrollView>
+                    {sectionEntries.map((item) => (
+                      <TouchableOpacity
+                        key={item.key}
+                        style={styles.menuItem}
+                        onPress={() => handleSectionPress(item.key)}
+                      >
+                        <ThemedText>{item.label}</ThemedText>
+                        {sectionErrors[item.key] && (
+                          <IconSymbol
+                            name="exclamationmark.circle.fill"
+                            size={16}
+                            color="red"
+                          />
+                        )}
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
+                ) : (
+                  <ScrollView contentContainerStyle={styles.mediaList}>
+                    {photos.map((p) => (
+                      <TouchableOpacity
+                        key={p.key}
+                        onPress={() => handleMediaPress(p.key)}
+                      >
+                        <Image
+                          source={{ uri: p.uri }}
+                          style={styles.mediaThumb}
+                        />
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
+                )}
               </View>
-            </>
-          )}
-        </View>
-        </View>
-      </ThemedView>
+            </View>
+          </Modal>
+        </ThemedView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     padding: 16,
   },
   buttonRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
     gap: 8,
     padding: 16,
-    marginBottom: 30
+    marginBottom: 30,
   },
   buttonWrapper: {
     flex: 1,
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.3)',
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
+    backgroundColor: "rgba(0,0,0,0.3)",
+    flexDirection: "row",
+    justifyContent: "flex-end",
   },
   drawer: {
     width: 250,
     padding: 16,
   },
   tabRow: {
-    flexDirection: 'row',
+    flexDirection: "row",
     marginBottom: 8,
   },
   tabButton: {
     flex: 1,
-    alignItems: 'center',
+    alignItems: "center",
     paddingVertical: 8,
   },
   activeTab: {
     borderBottomWidth: 2,
-    borderColor: '#0a7ea4',
+    borderColor: "#0a7ea4",
   },
   menuItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     paddingVertical: 12,
   },
   mediaList: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: 8,
   },
   mediaThumb: {
@@ -359,8 +398,8 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   offlineText: {
-    color: 'red',
-    textAlign: 'center',
+    color: "red",
+    textAlign: "center",
     marginBottom: 8,
   },
 });
