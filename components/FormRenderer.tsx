@@ -9,10 +9,12 @@ import {
   Image,
   ScrollView,
   StyleSheet,
+  Switch,
   Text,
   TextInput,
   View,
 } from 'react-native';
+import { Picker } from '@react-native-picker/picker';
 import * as ImagePicker from 'expo-image-picker';
 import * as FileSystem from 'expo-file-system';
 import { v4 as uuidv4 } from 'uuid';
@@ -84,13 +86,44 @@ export type VisibleWhen = {
   any?: VisibleWhenCondition[];
 };
 
-export type FormField = {
-  type: 'text' | 'date' | 'photo';
-  label: string;
-  key: string;
-  required?: boolean;
-  visibleWhen?: VisibleWhen;
-};
+export type FormField =
+  | {
+      type: 'text' | 'date' | 'photo';
+      label: string;
+      key: string;
+      required?: boolean;
+      visibleWhen?: VisibleWhen;
+    }
+  | {
+      type: 'boolean';
+      label: string;
+      key: string;
+      required?: boolean;
+      visibleWhen?: VisibleWhen;
+    }
+  | {
+      type: 'number';
+      label: string;
+      key: string;
+      required?: boolean;
+      visibleWhen?: VisibleWhen;
+    }
+  | {
+      type: 'select';
+      label: string;
+      key: string;
+      options: string[];
+      required?: boolean;
+      visibleWhen?: VisibleWhen;
+    }
+  | {
+      type: 'multiselect';
+      label: string;
+      key: string;
+      options: string[];
+      required?: boolean;
+      visibleWhen?: VisibleWhen;
+    };
 
 export type FormSection = {
   key: string;
@@ -115,7 +148,23 @@ export const FormRenderer = forwardRef<FormRendererRef, FormRendererProps>(
     function createEmptySection(section: FormSection) {
       const obj: Record<string, any> = {};
       section.fields.forEach((f) => {
-        obj[f.key] = f.type === 'photo' ? undefined : '';
+        switch (f.type) {
+          case 'photo':
+            obj[f.key] = undefined;
+            break;
+          case 'boolean':
+            obj[f.key] = false;
+            break;
+          case 'number':
+            obj[f.key] = undefined;
+            break;
+          case 'multiselect':
+            obj[f.key] = [];
+            break;
+          default:
+            obj[f.key] = '';
+            break;
+        }
       });
       return obj;
     }
@@ -221,6 +270,77 @@ export const FormRenderer = forwardRef<FormRendererRef, FormRendererProps>(
                 value={value}
                 onChangeText={(text) => handleChange(path, text)}
               />
+            </View>
+          );
+        case 'boolean':
+          return (
+            <View style={styles.fieldContainer} key={key}>
+              <Text style={styles.label}>{field.label}</Text>
+              <Switch
+                value={!!value}
+                onValueChange={(val) => handleChange(path, val)}
+              />
+            </View>
+          );
+        case 'number':
+          return (
+            <View style={styles.fieldContainer} key={key}>
+              <Text style={styles.label}>{field.label}</Text>
+              <TextInput
+                style={styles.textInput}
+                keyboardType="numeric"
+                value={value !== undefined ? String(value) : ''}
+                onChangeText={(text) =>
+                  handleChange(path, text === '' ? undefined : Number(text))
+                }
+              />
+            </View>
+          );
+        case 'select':
+          return (
+            <View style={styles.fieldContainer} key={key}>
+              <Text style={styles.label}>{field.label}</Text>
+              <Picker
+                selectedValue={value}
+                onValueChange={(val) => handleChange(path, val)}>
+                <Picker.Item label="" value="" />
+                {field.options.map((opt) => (
+                  <Picker.Item key={opt} label={opt} value={opt} />
+                ))}
+              </Picker>
+            </View>
+          );
+        case 'multiselect':
+          return (
+            <View style={styles.fieldContainer} key={key}>
+              <Text style={styles.label}>{field.label}</Text>
+              {field.options.map((opt) => {
+                const selected = Array.isArray(value)
+                  ? value.includes(opt)
+                  : false;
+                return (
+                  <View
+                    key={opt}
+                    style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                    <Switch
+                      value={selected}
+                      onValueChange={(val) => {
+                        const current: string[] = Array.isArray(value)
+                          ? [...value]
+                          : [];
+                        if (val) {
+                          if (!current.includes(opt)) current.push(opt);
+                        } else {
+                          const idx = current.indexOf(opt);
+                          if (idx > -1) current.splice(idx, 1);
+                        }
+                        handleChange(path, current);
+                      }}
+                    />
+                    <Text>{opt}</Text>
+                  </View>
+                );
+              })}
             </View>
           );
         case 'date':
