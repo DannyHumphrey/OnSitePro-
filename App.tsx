@@ -18,6 +18,7 @@ import InboxScreen from '@/screens/InboxScreen';
 import LoginScreen from '@/screens/LoginScreen';
 import OutboxScreen from '@/screens/OutboxScreen';
 import SentScreen from '@/screens/SentScreen';
+import SettingsScreen from '@/screens/SettingsScreen';
 
 const Tab = createBottomTabNavigator<TabParamList>();
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -81,11 +82,11 @@ function MainTabs() {
       />
       <Tab.Screen
         name="Settings"
-        component={SentScreen}
+        component={SettingsScreen}
         options={{
-          title: 'Sent',
+          title: 'Settings',
           tabBarIcon: ({ color }) => (
-            <MaterialIcons size={28} color={color} name="send" />
+            <MaterialIcons size={28} color={color} name="settings" />
           ),
         }}
       />
@@ -134,27 +135,24 @@ export default function App() {
   }
   return (
     <NavigationContainer theme={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
-        {isLoggedIn ? (
-          <>
-            <Stack.Screen
-              name="Tabs"
-              component={MainTabs}
-              options={({ route }) => ({
-                headerShown: true,
-                headerTitle: getTabTitle(route),
-              })}
-            />
-            <Stack.Screen name="CreateForm" component={CreateFormScreen} />
-            <Stack.Screen name="Form" component={FormScreen} />
-          </>
-        ) : (
-          <Stack.Screen name="Login">
-            {(props) => (
-              <LoginScreen {...props} onLogin={() => setIsLoggedIn(true)} />
-            )}
-          </Stack.Screen>
-        )}
+      <Stack.Navigator
+        screenOptions={{ headerShown: false }}
+        initialRouteName={isLoggedIn ? 'Tabs' : 'Login'}>
+        <Stack.Screen name="Login">
+          {(props) => (
+            <LoginScreen {...props} onLogin={() => setIsLoggedIn(true)} />
+          )}
+        </Stack.Screen>
+        <Stack.Screen
+          name="Tabs"
+          component={MainTabs}
+          options={({ route }) => ({
+            headerShown: true,
+            headerTitle: getTabTitle(route),
+          })}
+        />
+        <Stack.Screen name="CreateForm" component={CreateFormScreen} />
+        <Stack.Screen name="Form" component={FormScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );
