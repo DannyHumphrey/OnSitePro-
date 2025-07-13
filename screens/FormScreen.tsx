@@ -7,7 +7,7 @@ import { v4 as uuidv4 } from 'uuid';
 import FormRenderer, { type FormRendererRef } from '@/components/FormRenderer';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
-import { RootStackParamList } from '@/navigation/types';
+import { DraftsStackParamList } from '@/navigation/types';
 import {
   getDraftById,
   saveDraft,
@@ -16,7 +16,7 @@ import {
 
 type OutboxForm = Omit<DraftForm, 'status'> & { status: 'complete' };
 
-type Props = NativeStackScreenProps<RootStackParamList, 'Form'>;
+type Props = NativeStackScreenProps<DraftsStackParamList, 'FormScreen'>;
 
 export default function FormScreen({ route, navigation }: Props) {
   const { schema, formName, formType = 'demo', draftId, data } = route.params;
@@ -139,7 +139,7 @@ export default function FormScreen({ route, navigation }: Props) {
       }
 
       console.log('Form moved to outbox:', id);
-      navigation.navigate('Tabs', { screen: 'Drafts' });
+      navigation.popToTop();
     } catch (err) {
       console.log('Error submitting form:', err);
       Alert.alert('Error', 'Failed to submit form.');
@@ -149,7 +149,7 @@ export default function FormScreen({ route, navigation }: Props) {
   return (
     <SafeAreaView style={{ flex: 1 }}>
       <ThemedView style={{ flex: 1 }}>
-        <Button title="Back" onPress={() => navigation.navigate('Tabs', { screen: 'Drafts' })} />
+        <Button title="Back" onPress={() => navigation.popToTop()} />
         {formName && (
           <ThemedText type="title" style={{ padding: 16 }}>
             {formName}
