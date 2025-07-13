@@ -1,10 +1,21 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useEffect, useRef, useState } from 'react';
-import { Alert, Button, SafeAreaView, StyleSheet, View } from 'react-native';
+import {
+  Alert,
+  Button,
+  SafeAreaView,
+  StyleSheet,
+  View,
+  Modal,
+  TouchableOpacity,
+  ScrollView,
+  Image,
+} from 'react-native';
 import { v4 as uuidv4 } from 'uuid';
 
 import FormRenderer, { type FormRendererRef } from '@/components/FormRenderer';
+import { IconSymbol } from '@/components/ui/IconSymbol';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { Colors } from '@/constants/Colors';
@@ -26,6 +37,8 @@ export default function FormScreen({ route, navigation }: Props) {
   const colorScheme = useColorScheme() ?? 'light';
   const [existingDraft, setExistingDraft] = useState<DraftForm | null>(null);
   const [initialData, setInitialData] = useState<Record<string, any> | undefined>(data);
+  const [menuVisible, setMenuVisible] = useState(false);
+  const [menuTab, setMenuTab] = useState<'sections' | 'media'>('sections');
 
   useEffect(() => {
     if (draftId) {
@@ -151,15 +164,98 @@ export default function FormScreen({ route, navigation }: Props) {
     }
   };
 
+  const sectionEntries = schema.flatMap((section) => {
+    if (section.repeatable) {
+      const dataArr = formRef.current?.getFormData()[section.key] as any[] | undefined;
+      const length = dataArr ? dataArr.length : 0;
+      return Array.from({ length }).map((_, idx) => ({
+        key: `${section.key}.${idx}`,
+        label: `${section.label} ${idx + 1}`,
+      }));
+    }
+    return [{ key: section.key, label: section.label }];
+  });
+
+  const sectionErrors = formRef.current?.getSectionErrorMap() ?? {};
+  const photos = formRef.current?.getPhotoFields() ?? [];
+
+  const handleSectionPress = (key: string) => {
+    setMenuVisible(false);
+    formRef.current?.openSection(key);
+  };
+
+  const handleMediaPress = (key: string) => {
+    setMenuVisible(false);
+    formRef.current?.scrollToField(key);
+  };
+
   return (
     <SafeAreaView style={{ flex: 1 }}>
       <ThemedView style={{ flex: 1 }}>
         {formName && (
-          <ThemedText type="title" style={{ padding: 16 }}>
-            {formName}
-          </ThemedText>
+          <View style={styles.header}>
+            <ThemedText type="title" style={{ flex: 1 }}>
+              {formName}
+            </ThemedText>
+            <TouchableOpacity onPress={() => setMenuVisible(true)}>
+              <IconSymbol
+                name="line.3.horizontal"
+                size={24}
+                color={Colors[colorScheme].text}
+              />
+            </TouchableOpacity>
+          </View>
         )}
         <FormRenderer ref={formRef} schema={schema} initialData={initialData} />
+        <Modal
+          transparent
+          animationType="slide"
+          visible={menuVisible}
+          onRequestClose={() => setMenuVisible(false)}>
+          <View style={styles.modalOverlay}>
+            <View style={[styles.drawer, { backgroundColor: Colors[colorScheme].background }]}>
+              <View style={styles.tabRow}>
+                <TouchableOpacity
+                  style={[styles.tabButton, menuTab === 'sections' && styles.activeTab]}
+                  onPress={() => setMenuTab('sections')}>
+                  <ThemedText>Sections</ThemedText>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.tabButton, menuTab === 'media' && styles.activeTab]}
+                  onPress={() => setMenuTab('media')}>
+                  <ThemedText>Media</ThemedText>
+                </TouchableOpacity>
+              </View>
+              {menuTab === 'sections' ? (
+                <ScrollView>
+                  {sectionEntries.map((item) => (
+                    <TouchableOpacity
+                      key={item.key}
+                      style={styles.menuItem}
+                      onPress={() => handleSectionPress(item.key)}>
+                      <ThemedText>{item.label}</ThemedText>
+                      {sectionErrors[item.key] && (
+                        <IconSymbol
+                          name="exclamationmark.circle.fill"
+                          size={16}
+                          color="red"
+                        />
+                      )}
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              ) : (
+                <ScrollView contentContainerStyle={styles.mediaList}>
+                  {photos.map((p) => (
+                    <TouchableOpacity key={p.key} onPress={() => handleMediaPress(p.key)}>
+                      <Image source={{ uri: p.uri }} style={styles.mediaThumb} />
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              )}
+            </View>
+          </View>
+        </Modal>
         <View style={styles.buttonRow}>
           <View style={styles.buttonWrapper}>
             <Button
@@ -184,6 +280,11 @@ export default function FormScreen({ route, navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+  },
   buttonRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -193,5 +294,44 @@ const styles = StyleSheet.create({
   },
   buttonWrapper: {
     flex: 1,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.3)',
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+  },
+  drawer: {
+    width: 250,
+    padding: 16,
+  },
+  tabRow: {
+    flexDirection: 'row',
+    marginBottom: 8,
+  },
+  tabButton: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+  activeTab: {
+    borderBottomWidth: 2,
+    borderColor: '#0a7ea4',
+  },
+  menuItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 12,
+  },
+  mediaList: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  mediaThumb: {
+    width: 60,
+    height: 60,
+    borderRadius: 4,
   },
 });
