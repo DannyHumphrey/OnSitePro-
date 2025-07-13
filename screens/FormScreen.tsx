@@ -1,12 +1,14 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useEffect, useRef, useState } from 'react';
-import { Alert, Button, SafeAreaView } from 'react-native';
+import { Alert, Button, SafeAreaView, StyleSheet, View } from 'react-native';
 import { v4 as uuidv4 } from 'uuid';
 
 import FormRenderer, { type FormRendererRef } from '@/components/FormRenderer';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
+import { Colors } from '@/constants/Colors';
+import { useColorScheme } from '@/hooks/useColorScheme';
 import { DraftsStackParamList } from '@/navigation/types';
 import {
   getDraftById,
@@ -21,6 +23,7 @@ type Props = NativeStackScreenProps<DraftsStackParamList, 'FormScreen'>;
 export default function FormScreen({ route, navigation }: Props) {
   const { schema, formName, formType = 'demo', draftId, data } = route.params;
   const formRef = useRef<FormRendererRef>(null);
+  const colorScheme = useColorScheme() ?? 'light';
   const [existingDraft, setExistingDraft] = useState<DraftForm | null>(null);
   const [initialData, setInitialData] = useState<Record<string, any> | undefined>(data);
 
@@ -149,16 +152,43 @@ export default function FormScreen({ route, navigation }: Props) {
   return (
     <SafeAreaView style={{ flex: 1 }}>
       <ThemedView style={{ flex: 1 }}>
-        <Button title="Back" onPress={() => navigation.popToTop()} />
         {formName && (
           <ThemedText type="title" style={{ padding: 16 }}>
             {formName}
           </ThemedText>
         )}
         <FormRenderer ref={formRef} schema={schema} initialData={initialData} />
-        <Button title="Save Draft" onPress={handleSaveDraft} />
-        <Button title="Submit Form" onPress={handleSubmitForm} />
+        <View style={styles.buttonRow}>
+          <View style={styles.buttonWrapper}>
+            <Button
+              title="Back"
+              onPress={() => navigation.popToTop()}
+            />
+          </View>
+          <View style={styles.buttonWrapper}>
+            <Button title="Save as Draft" onPress={handleSaveDraft} />
+          </View>
+          <View style={styles.buttonWrapper}>
+            <Button
+              title="Submit"
+              onPress={handleSubmitForm}
+              color={Colors[colorScheme].tint}
+            />
+          </View>
+        </View>
       </ThemedView>
     </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  buttonRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 8,
+    padding: 16,
+  },
+  buttonWrapper: {
+    flex: 1,
+  },
+});
