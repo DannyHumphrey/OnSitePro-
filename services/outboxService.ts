@@ -23,7 +23,9 @@ async function convertImagesToBase64(obj: any): Promise<any> {
           const base64 = await FileSystem.readAsStringAsync(item, {
             encoding: FileSystem.EncodingType.Base64,
           });
-          arr.push(`data:image/jpeg;base64,${base64}`);
+          const ext = item.split('.').pop()?.toLowerCase();
+          const mime = ext === 'png' ? 'image/png' : 'image/jpeg';
+          arr.push(`data:${mime};base64,${base64}`);
         } catch {
           arr.push(null);
         }
@@ -45,7 +47,9 @@ async function convertImagesToBase64(obj: any): Promise<any> {
           const base64 = await FileSystem.readAsStringAsync(value, {
             encoding: FileSystem.EncodingType.Base64,
           });
-          newObj[key] = `data:image/jpeg;base64,${base64}`;
+          const ext = value.split('.').pop()?.toLowerCase();
+          const mime = ext === 'png' ? 'image/png' : 'image/jpeg';
+          newObj[key] = `data:${mime};base64,${base64}`;
         } catch {
           newObj[key] = null;
         }
