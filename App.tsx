@@ -27,6 +27,7 @@ import InboxScreen from '@/screens/InboxScreen';
 import LoginScreen from '@/screens/LoginScreen';
 import OutboxScreen from '@/screens/OutboxScreen';
 import SentScreen from '@/screens/SentScreen';
+import { cleanupOldSentForms } from '@/services/sentService';
 import SettingsScreen from '@/screens/SettingsScreen';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
@@ -152,6 +153,16 @@ export default function App() {
       }
     }
     loadStatus();
+  }, []);
+
+  useEffect(() => {
+    cleanupOldSentForms()
+      .then((count) => {
+        if (count > 0) {
+          console.log(`Cleaned up ${count} old sent forms`);
+        }
+      })
+      .catch((err) => console.log('Cleanup error:', err));
   }, []);
 
   if (isLoggedIn === null) {
