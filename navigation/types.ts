@@ -5,6 +5,7 @@ export type TabParamList = {
   Inbox: undefined;
   Outbox: undefined;
   Sent: undefined;
+  Settings: undefined;
 };
 
 export type RootStackParamList = {

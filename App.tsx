@@ -1,8 +1,8 @@
 import { MaterialIcons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { DarkTheme, DefaultTheme, NavigationContainer, getFocusedRouteNameFromRoute } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Platform, View } from 'react-native';
 
@@ -40,22 +40,22 @@ function MainTabs() {
         }),
       }}>
       <Tab.Screen
-        name="Drafts"
-        component={DraftsScreen}
-        options={{
-          title: 'Drafts',
-          tabBarIcon: ({ color }) => (
-            <MaterialIcons size={28} color={color} name="drafts" />
-          ),
-        }}
-      />
-      <Tab.Screen
         name="Inbox"
         component={InboxScreen}
         options={{
           title: 'Inbox',
           tabBarIcon: ({ color }) => (
             <MaterialIcons size={28} color={color} name="inbox" />
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="Drafts"
+        component={DraftsScreen}
+        options={{
+          title: 'Drafts',
+          tabBarIcon: ({ color }) => (
+            <MaterialIcons size={28} color={color} name="drafts" />
           ),
         }}
       />
@@ -79,6 +79,16 @@ function MainTabs() {
           ),
         }}
       />
+      <Tab.Screen
+        name="Settings"
+        component={SentScreen}
+        options={{
+          title: 'Sent',
+          tabBarIcon: ({ color }) => (
+            <MaterialIcons size={28} color={color} name="send" />
+          ),
+        }}
+      />
     </Tab.Navigator>
   );
 }
@@ -92,6 +102,8 @@ function getTabTitle(route: any) {
       return 'Outbox';
     case 'Sent':
       return 'Sent';
+    case 'Settings':
+      return 'Settings';
     default:
       return 'Drafts';
   }
