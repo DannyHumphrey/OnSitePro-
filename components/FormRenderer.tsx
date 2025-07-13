@@ -3,6 +3,7 @@ import React, {
   useImperativeHandle,
   useState,
   useEffect,
+  memo,
 } from 'react';
 import {
   Button,
@@ -143,6 +144,147 @@ export type FormRendererRef = {
   getFormData: () => Record<string, unknown>;
 };
 
+export type FieldRendererProps = {
+  field: FormField;
+  path: (string | number)[];
+  formState: Record<string, any>;
+  activeDateKey: string | null;
+  setActiveDateKey: React.Dispatch<React.SetStateAction<string | null>>;
+  handleChange: (path: (string | number)[], value: any) => void;
+  handlePickImage: (path: (string | number)[]) => void;
+};
+
+const FieldRenderer = memo(function FieldRenderer({
+  field,
+  path,
+  formState,
+  activeDateKey,
+  setActiveDateKey,
+  handleChange,
+  handlePickImage,
+}: FieldRendererProps) {
+  const key = path.join('.');
+  const isVisible = React.useMemo(
+    () => evaluateVisibleWhen(field.visibleWhen, formState),
+    [formState, field.visibleWhen],
+  );
+  if (!isVisible) return null;
+  const value = getNestedValue(formState, path);
+
+  switch (field.type) {
+    case 'text':
+      return (
+        <View style={styles.fieldContainer} key={key}>
+          <Text style={styles.label}>{field.label}</Text>
+          <TextInput
+            style={styles.textInput}
+            value={value}
+            onChangeText={(text) => handleChange(path, text)}
+          />
+        </View>
+      );
+    case 'boolean':
+      return (
+        <View style={styles.fieldContainer} key={key}>
+          <Text style={styles.label}>{field.label}</Text>
+          <Switch
+            value={!!value}
+            onValueChange={(val) => handleChange(path, val)}
+          />
+        </View>
+      );
+    case 'number':
+      return (
+        <View style={styles.fieldContainer} key={key}>
+          <Text style={styles.label}>{field.label}</Text>
+          <TextInput
+            style={styles.textInput}
+            keyboardType="numeric"
+            value={value !== undefined ? String(value) : ''}
+            onChangeText={(text) =>
+              handleChange(path, text === '' ? undefined : Number(text))
+            }
+          />
+        </View>
+      );
+    case 'select':
+      return (
+        <View style={styles.fieldContainer} key={key}>
+          <Text style={styles.label}>{field.label}</Text>
+          <Picker selectedValue={value} onValueChange={(val) => handleChange(path, val)}>
+            <Picker.Item label="" value="" />
+            {field.options.map((opt) => (
+              <Picker.Item key={opt} label={opt} value={opt} />
+            ))}
+          </Picker>
+        </View>
+      );
+    case 'multiselect':
+      return (
+        <View style={styles.fieldContainer} key={key}>
+          <Text style={styles.label}>{field.label}</Text>
+          {field.options.map((opt) => {
+            const selected = Array.isArray(value) ? value.includes(opt) : false;
+            return (
+              <View key={opt} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <Switch
+                  value={selected}
+                  onValueChange={(val) => {
+                    const current: string[] = Array.isArray(value) ? [...value] : [];
+                    if (val) {
+                      if (!current.includes(opt)) current.push(opt);
+                    } else {
+                      const idx = current.indexOf(opt);
+                      if (idx > -1) current.splice(idx, 1);
+                    }
+                    handleChange(path, current);
+                  }}
+                />
+                <Text>{opt}</Text>
+              </View>
+            );
+          })}
+        </View>
+      );
+    case 'date':
+      return (
+        <View style={styles.fieldContainer} key={key}>
+          <Text style={styles.label}>{field.label}</Text>
+          <Button
+            title={value ? new Date(value).toLocaleDateString() : 'Select Date'}
+            onPress={() => setActiveDateKey(key)}
+          />
+          {activeDateKey === key && (
+            <DateTimePicker
+              value={value ? new Date(value) : new Date()}
+              mode="date"
+              display="default"
+              onChange={(
+                _event: DateTimePickerEvent,
+                date?: Date,
+              ) => {
+                setActiveDateKey(null);
+                if (date) {
+                  handleChange(path, date.toISOString());
+                }
+              }}
+            />
+          )}
+        </View>
+      );
+    case 'photo':
+      return (
+        <View style={styles.fieldContainer} key={key}>
+          <Text style={styles.label}>{field.label}</Text>
+          <Button title="Take Photo" onPress={() => handlePickImage(path)} />
+          {value && <Image source={{ uri: value }} style={styles.thumbnail} />}
+        </View>
+      );
+    default:
+      return null;
+  }
+});
+
 export const FormRenderer = forwardRef<FormRendererRef, FormRendererProps>(
   ({ schema, initialData }, ref) => {
     function createEmptySection(section: FormSection) {
@@ -245,146 +387,6 @@ export const FormRenderer = forwardRef<FormRendererRef, FormRendererProps>(
       }
     };
 
-    const FieldRenderer = ({
-      field,
-      path,
-    }: {
-      field: FormField;
-      path: (string | number)[];
-    }) => {
-      const key = path.join('.');
-      const isVisible = React.useMemo(
-        () => evaluateVisibleWhen(field.visibleWhen, formState),
-        [formState, field.visibleWhen],
-      );
-      if (!isVisible) return null;
-      const value = getNestedValue(formState, path);
-
-      switch (field.type) {
-        case 'text':
-          return (
-            <View style={styles.fieldContainer} key={key}>
-              <Text style={styles.label}>{field.label}</Text>
-              <TextInput
-                style={styles.textInput}
-                value={value}
-                onChangeText={(text) => handleChange(path, text)}
-              />
-            </View>
-          );
-        case 'boolean':
-          return (
-            <View style={styles.fieldContainer} key={key}>
-              <Text style={styles.label}>{field.label}</Text>
-              <Switch
-                value={!!value}
-                onValueChange={(val) => handleChange(path, val)}
-              />
-            </View>
-          );
-        case 'number':
-          return (
-            <View style={styles.fieldContainer} key={key}>
-              <Text style={styles.label}>{field.label}</Text>
-              <TextInput
-                style={styles.textInput}
-                keyboardType="numeric"
-                value={value !== undefined ? String(value) : ''}
-                onChangeText={(text) =>
-                  handleChange(path, text === '' ? undefined : Number(text))
-                }
-              />
-            </View>
-          );
-        case 'select':
-          return (
-            <View style={styles.fieldContainer} key={key}>
-              <Text style={styles.label}>{field.label}</Text>
-              <Picker
-                selectedValue={value}
-                onValueChange={(val) => handleChange(path, val)}>
-                <Picker.Item label="" value="" />
-                {field.options.map((opt) => (
-                  <Picker.Item key={opt} label={opt} value={opt} />
-                ))}
-              </Picker>
-            </View>
-          );
-        case 'multiselect':
-          return (
-            <View style={styles.fieldContainer} key={key}>
-              <Text style={styles.label}>{field.label}</Text>
-              {field.options.map((opt) => {
-                const selected = Array.isArray(value)
-                  ? value.includes(opt)
-                  : false;
-                return (
-                  <View
-                    key={opt}
-                    style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                    <Switch
-                      value={selected}
-                      onValueChange={(val) => {
-                        const current: string[] = Array.isArray(value)
-                          ? [...value]
-                          : [];
-                        if (val) {
-                          if (!current.includes(opt)) current.push(opt);
-                        } else {
-                          const idx = current.indexOf(opt);
-                          if (idx > -1) current.splice(idx, 1);
-                        }
-                        handleChange(path, current);
-                      }}
-                    />
-                    <Text>{opt}</Text>
-                  </View>
-                );
-              })}
-            </View>
-          );
-        case 'date':
-          return (
-            <View style={styles.fieldContainer} key={key}>
-              <Text style={styles.label}>{field.label}</Text>
-              <Button
-                title={
-                  value ? new Date(value).toLocaleDateString() : 'Select Date'
-                }
-                onPress={() => setActiveDateKey(key)}
-              />
-              {activeDateKey === key && (
-                <DateTimePicker
-                  value={value ? new Date(value) : new Date()}
-                  mode="date"
-                  display="default"
-                  onChange={(
-                    _event: DateTimePickerEvent,
-                    date?: Date,
-                  ) => {
-                    setActiveDateKey(null);
-                    if (date) {
-                      handleChange(path, date.toISOString());
-                    }
-                  }}
-                />
-              )}
-            </View>
-          );
-        case 'photo':
-          return (
-            <View style={styles.fieldContainer} key={key}>
-              <Text style={styles.label}>{field.label}</Text>
-              <Button title="Take Photo" onPress={() => handlePickImage(path)} />
-              {value && (
-                <Image source={{ uri: value }} style={styles.thumbnail} />
-              )}
-            </View>
-          );
-        default:
-          return null;
-      }
-    };
 
     const addSection = (section: FormSection) => {
       setFormState((prev) => {
@@ -434,6 +436,11 @@ export const FormRenderer = forwardRef<FormRendererRef, FormRendererProps>(
                       key={`${section.key}-${idx}-${f.key}`}
                       field={f}
                       path={[section.key, idx, f.key]}
+                      formState={formState}
+                      activeDateKey={activeDateKey}
+                      setActiveDateKey={setActiveDateKey}
+                      handleChange={handleChange}
+                      handlePickImage={handlePickImage}
                     />
                   ))}
                   <Button
@@ -454,6 +461,11 @@ export const FormRenderer = forwardRef<FormRendererRef, FormRendererProps>(
               key={`${section.key}-${f.key}`}
               field={f}
               path={[section.key, f.key]}
+              formState={formState}
+              activeDateKey={activeDateKey}
+              setActiveDateKey={setActiveDateKey}
+              handleChange={handleChange}
+              handlePickImage={handlePickImage}
             />
           ))}
         </Collapsible>
