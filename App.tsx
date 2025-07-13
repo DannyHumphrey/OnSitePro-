@@ -9,7 +9,7 @@ import {
 } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Platform, View } from 'react-native';
+import { ActivityIndicator, Platform, View, Text } from 'react-native';
 
 import { HapticTab } from '@/components/HapticTab';
 import TabBarBackground from '@/components/ui/TabBarBackground';
@@ -29,6 +29,7 @@ import OutboxScreen from '@/screens/OutboxScreen';
 import SentScreen from '@/screens/SentScreen';
 import { cleanupOldSentForms } from '@/services/sentService';
 import SettingsScreen from '@/screens/SettingsScreen';
+import { FormCountsProvider, useFormCounts } from '@/context/FormCountsContext';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 const RootStack = createNativeStackNavigator<RootStackParamList>();
@@ -54,6 +55,26 @@ function DraftsTabNavigator() {
 
 function MainTabNavigator() {
   const colorScheme = useColorScheme();
+  const { counts } = useFormCounts();
+  const renderIcon = (name: keyof typeof MaterialIcons.glyphMap, color: string, count: number) => (
+    <View>
+      <MaterialIcons size={28} color={color} name={name} />
+      {count > 0 && (
+        <View
+          style={{
+            position: 'absolute',
+            right: -6,
+            top: -4,
+            backgroundColor: 'red',
+            borderRadius: 10,
+            paddingHorizontal: 6,
+            paddingVertical: 2,
+          }}>
+          <Text style={{ color: 'white', fontSize: 10 }}>{count}</Text>
+        </View>
+      )}
+    </View>
+  );
   return (
     <Tab.Navigator
       initialRouteName="DraftsTab"
@@ -74,9 +95,7 @@ function MainTabNavigator() {
         component={InboxScreen}
         options={{
           title: 'Inbox',
-          tabBarIcon: ({ color }) => (
-            <MaterialIcons size={28} color={color} name="inbox" />
-          ),
+          tabBarIcon: ({ color }) => renderIcon('inbox', color, counts.inbox),
         }}
       />
       <Tab.Screen
@@ -84,9 +103,7 @@ function MainTabNavigator() {
         component={DraftsTabNavigator}
         options={{
           title: 'Drafts',
-          tabBarIcon: ({ color }) => (
-            <MaterialIcons size={28} color={color} name="drafts" />
-          ),
+          tabBarIcon: ({ color }) => renderIcon('drafts', color, counts.drafts),
         }}
       />
       <Tab.Screen
@@ -94,9 +111,7 @@ function MainTabNavigator() {
         component={OutboxScreen}
         options={{
           title: 'Outbox',
-          tabBarIcon: ({ color }) => (
-            <MaterialIcons size={28} color={color} name="outbox" />
-          ),
+          tabBarIcon: ({ color }) => renderIcon('outbox', color, counts.outbox),
         }}
       />
       <Tab.Screen
@@ -104,9 +119,7 @@ function MainTabNavigator() {
         component={SentScreen}
         options={{
           title: 'Sent',
-          tabBarIcon: ({ color }) => (
-            <MaterialIcons size={28} color={color} name="send" />
-          ),
+          tabBarIcon: ({ color }) => renderIcon('send', color, counts.sent),
         }}
       />
       <Tab.Screen
@@ -173,10 +186,11 @@ export default function App() {
     );
   }
   return (
-    <NavigationContainer theme={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <RootStack.Navigator
-        screenOptions={{ headerShown: false }}
-        initialRouteName={isLoggedIn ? 'MainTabs' : 'Login'}>
+    <FormCountsProvider>
+      <NavigationContainer theme={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+        <RootStack.Navigator
+          screenOptions={{ headerShown: false }}
+          initialRouteName={isLoggedIn ? 'MainTabs' : 'Login'}>
         <RootStack.Screen name="Login">
           {(props) => (
             <LoginScreen {...props} onLogin={() => setIsLoggedIn(true)} />
@@ -192,5 +206,6 @@ export default function App() {
         />
       </RootStack.Navigator>
     </NavigationContainer>
+    </FormCountsProvider>
   );
 }

@@ -6,6 +6,7 @@ import { FlatList, StyleSheet, TouchableOpacity } from 'react-native';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import type { FormSchema } from '@/components/FormRenderer';
+import { useFormCounts } from '@/context/FormCountsContext';
 
 export type SentForm = {
   id: string;
@@ -19,6 +20,7 @@ export type SentForm = {
 export default function SentScreen() {
   const navigation = useNavigation();
   const [forms, setForms] = useState<SentForm[]>([]);
+  const { setCounts } = useFormCounts();
 
   const loadSentForms = useCallback(async () => {
     try {
@@ -32,10 +34,11 @@ export default function SentScreen() {
         }
       }
       setForms(result);
+      setCounts((c) => ({ ...c, sent: result.length }));
     } catch (err) {
       console.log('Error loading sent forms:', err);
     }
-  }, []);
+  }, [setCounts]);
 
   useFocusEffect(
     useCallback(() => {
