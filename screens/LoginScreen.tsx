@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useState } from 'react';
+import Constants from 'expo-constants';
 import {
   Alert,
   Button,
@@ -10,6 +11,7 @@ import {
   StyleSheet,
   TextInput,
   View,
+  Text,
 } from 'react-native';
 
 import { Colors } from '@/constants/Colors';
@@ -19,6 +21,9 @@ type Props = { onLogin: () => void };
 
 export default function LoginScreen({ onLogin }: Props) {
   const colorScheme = useColorScheme() ?? 'light';
+
+  const appVersion =
+    Constants.expoConfig?.version ?? Constants.manifest?.version ?? 'unknown';
 
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -86,6 +91,7 @@ export default function LoginScreen({ onLogin }: Props) {
             onPress={handleLogin}
             color={Colors[colorScheme].tint}
           />
+          <Text style={styles.versionText}>v{appVersion}</Text>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -107,5 +113,11 @@ const styles = StyleSheet.create({
     borderColor: '#ccc',
     padding: 8,
     borderRadius: 4,
+  },
+  versionText: {
+    marginTop: 32,
+    fontSize: 12,
+    opacity: 0.6,
+    textAlign: 'center',
   },
 });
