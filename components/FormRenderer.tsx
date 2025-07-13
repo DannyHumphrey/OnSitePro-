@@ -21,6 +21,7 @@ import {
   Text,
   TextInput,
   View,
+  LayoutChangeEvent,
 } from 'react-native';
 import { v4 as uuidv4 } from 'uuid';
 import { Collapsible } from './Collapsible';
@@ -173,6 +174,11 @@ export type FormRendererProps = {
 export type FormRendererRef = {
   getFormData: () => Record<string, unknown>;
   validateForm: () => { isValid: boolean; errors: Record<string, string> };
+  openSection: (key: string) => void;
+  scrollToSection: (key: string) => void;
+  scrollToField: (key: string) => void;
+  getSectionErrorMap: () => Record<string, boolean>;
+  getPhotoFields: () => { key: string; uri: string }[];
 };
 
 export type FieldRendererProps = {
@@ -185,6 +191,7 @@ export type FieldRendererProps = {
   handleChange: (path: (string | number)[], value: any) => void;
   handlePickImage: (path: (string | number)[]) => void;
   error?: string;
+  registerFieldPosition: (key: string, y: number) => void;
 };
 
 const FieldRenderer = memo(function FieldRenderer({
@@ -197,6 +204,7 @@ const FieldRenderer = memo(function FieldRenderer({
   handleChange,
   handlePickImage,
   error,
+  registerFieldPosition,
 }: FieldRendererProps) {
   const key = path.join('.');
   const isVisible = React.useMemo(
@@ -206,10 +214,14 @@ const FieldRenderer = memo(function FieldRenderer({
   if (!isVisible) return null;
   const value = getNestedValue(formState, path);
 
+  const onLayout = (e: LayoutChangeEvent) => {
+    registerFieldPosition(key, e.nativeEvent.layout.y);
+  };
+
   switch (field.type) {
     case 'text':
       return (
-        <View style={styles.fieldContainer} key={key}>
+        <View style={styles.fieldContainer} key={key} onLayout={onLayout}>
           <Text style={styles.label}>{field.label}</Text>
           <TextInput
             style={[styles.textInput, error && styles.errorInput]}
@@ -223,7 +235,8 @@ const FieldRenderer = memo(function FieldRenderer({
       return (
         <View
           style={[styles.fieldContainer, error && styles.errorContainer]}
-          key={key}>
+          key={key}
+          onLayout={onLayout}>
           <Text style={styles.label}>{field.label}</Text>
           <Switch
             value={!!value}
@@ -234,7 +247,7 @@ const FieldRenderer = memo(function FieldRenderer({
       );
     case 'number':
       return (
-        <View style={styles.fieldContainer} key={key}>
+        <View style={styles.fieldContainer} key={key} onLayout={onLayout}>
           <Text style={styles.label}>{field.label}</Text>
           <TextInput
             style={[styles.textInput, error && styles.errorInput]}
@@ -249,7 +262,7 @@ const FieldRenderer = memo(function FieldRenderer({
       );
     case 'select':
       return (
-        <View style={styles.fieldContainer} key={key}>
+        <View style={styles.fieldContainer} key={key} onLayout={onLayout}>
           <Text style={styles.label}>{field.label}</Text>
           <View style={[styles.pickerWrapper, error && styles.errorInput]}>
             <Picker selectedValue={value} onValueChange={(val) => handleChange(path, val)}>
@@ -264,7 +277,7 @@ const FieldRenderer = memo(function FieldRenderer({
       );
     case 'multiselect':
       return (
-        <View style={[styles.fieldContainer, error && styles.errorContainer]} key={key}>
+        <View style={[styles.fieldContainer, error && styles.errorContainer]} key={key} onLayout={onLayout}>
           <Text style={styles.label}>{field.label}</Text>
           {field.options.map((opt) => {
             const selected = Array.isArray(value) ? value.includes(opt) : false;
@@ -292,7 +305,7 @@ const FieldRenderer = memo(function FieldRenderer({
       );
     case 'date':
       return (
-        <View style={[styles.fieldContainer, error && styles.errorContainer]} key={key}>
+        <View style={[styles.fieldContainer, error && styles.errorContainer]} key={key} onLayout={onLayout}>
           <Text style={styles.label}>{field.label}</Text>
           <Button
             title={value ? new Date(value).toLocaleDateString() : 'Select Date'}
@@ -409,6 +422,7 @@ export const FormRenderer = forwardRef<FormRendererRef, FormRendererProps>(
     const [erroredSections, setErroredSections] = useState<Record<string, boolean>>({});
     const scrollRef = useRef<ScrollView>(null);
     const sectionPositions = useRef<Record<string, number>>({});
+    const fieldPositions = useRef<Record<string, number>>({});
 
     useEffect(() => {
       if (initialData) {
@@ -431,6 +445,40 @@ export const FormRenderer = forwardRef<FormRendererRef, FormRendererProps>(
     useImperativeHandle(ref, () => ({
       getFormData: () => formState,
       validateForm: validateForm,
+      openSection: (key: string) => {
+        setExpandedSections((prev) => ({ ...prev, [key]: true }));
+        const y = sectionPositions.current[key];
+        if (y !== undefined) {
+          setTimeout(() => scrollRef.current?.scrollTo({ y, animated: true }), 50);
+        }
+      },
+      scrollToSection: (key: string) => {
+        const y = sectionPositions.current[key];
+        if (y !== undefined) {
+          setTimeout(() => scrollRef.current?.scrollTo({ y, animated: true }), 50);
+        }
+      },
+      scrollToField: (key: string) => {
+        const parts = key.split('.');
+        const section = parts.length > 2 ? `${parts[0]}.${parts[1]}` : parts[0];
+        setExpandedSections((prev) => ({ ...prev, [section]: true }));
+        const y = fieldPositions.current[key];
+        if (y !== undefined) {
+          setTimeout(() => scrollRef.current?.scrollTo({ y, animated: true }), 50);
+        }
+      },
+      getSectionErrorMap: () => erroredSections,
+      getPhotoFields: () => {
+        const fields = getVisibleFields(schema, formState);
+        const photos: { key: string; uri: string }[] = [];
+        fields.forEach(({ field, path }) => {
+          if (field.type === 'photo') {
+            const val = getNestedValue(formState, path);
+            if (val) photos.push({ key: path.join('.'), uri: val });
+          }
+        });
+        return photos;
+      },
     }));
 
     const handleChange = (path: (string | number)[], value: any) => {
@@ -634,6 +682,9 @@ export const FormRenderer = forwardRef<FormRendererRef, FormRendererProps>(
                       handleChange={handleChange}
                       handlePickImage={handlePickImage}
                       error={formErrors[`${section.key}.${idx}.${f.key}`]}
+                      registerFieldPosition={(k, y) => {
+                        fieldPositions.current[k] = y;
+                      }}
                     />
                   ))}
                   <Button
@@ -670,6 +721,9 @@ export const FormRenderer = forwardRef<FormRendererRef, FormRendererProps>(
               handleChange={handleChange}
               handlePickImage={handlePickImage}
               error={formErrors[`${section.key}.${f.key}`]}
+              registerFieldPosition={(k, y) => {
+                fieldPositions.current[k] = y;
+              }}
             />
           ))}
         </Collapsible>
