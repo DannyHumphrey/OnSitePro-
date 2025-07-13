@@ -63,6 +63,11 @@ export default function FormScreen({ route, navigation }: Props) {
 
   const handleSubmitForm = async () => {
     try {
+      const validation = formRef.current?.validateForm();
+      if (validation && !validation.isValid) {
+        Alert.alert('Validation Error', 'Please fill all required fields.');
+        return;
+      }
       const formData = formRef.current?.getFormData() ?? {};
       const timestamp = new Date().toISOString();
       let draft: OutboxForm | null = null;
