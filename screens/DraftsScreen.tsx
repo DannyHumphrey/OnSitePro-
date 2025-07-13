@@ -1,5 +1,7 @@
 import { MaterialIcons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import * as FileSystem from 'expo-file-system';
 import { useCallback, useState } from 'react';
 import {
   Alert,
@@ -7,16 +9,14 @@ import {
   FlatList,
   Pressable,
   StyleSheet,
-  View,
   TextInput,
+  View,
 } from 'react-native';
-import { Picker } from '@react-native-picker/picker';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as FileSystem from 'expo-file-system';
 
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { Colors } from '@/constants/Colors';
+import { useFormCounts } from '@/context/FormCountsContext';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { DraftsStackParamList } from '@/navigation/types';
 import {
@@ -26,7 +26,6 @@ import {
 } from '@/services/draftService';
 import { deleteLocalPhoto } from '@/services/photoService';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useFormCounts } from '@/context/FormCountsContext';
 
 export default function DraftsScreen() {
   const navigation = useNavigation<
@@ -161,17 +160,6 @@ export default function DraftsScreen() {
           value={searchQuery}
           onChangeText={setSearchQuery}
         />
-        <Picker selectedValue={sortBy} onValueChange={(v) => setSortBy(v)}>
-          <Picker.Item label="Newest first" value="newest" />
-          <Picker.Item label="Oldest first" value="oldest" />
-          <Picker.Item label="A–Z" value="az" />
-        </Picker>
-        <Picker selectedValue={filterBy} onValueChange={(v) => setFilterBy(v)}>
-          <Picker.Item label="All" value="All" />
-          {formTypes.map((t) => (
-            <Picker.Item key={t} label={t} value={t} />
-          ))}
-        </Picker>
       </View>
       <FlatList
         data={sortedDrafts}

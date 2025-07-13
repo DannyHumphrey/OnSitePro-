@@ -4,20 +4,20 @@ import { useEffect, useRef, useState } from 'react';
 import {
   Alert,
   Button,
-  SafeAreaView,
-  StyleSheet,
-  View,
-  Modal,
-  TouchableOpacity,
-  ScrollView,
   Image,
+  Modal,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { v4 as uuidv4 } from 'uuid';
 
 import FormRenderer, { type FormRendererRef } from '@/components/FormRenderer';
-import { IconSymbol } from '@/components/ui/IconSymbol';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
+import { IconSymbol } from '@/components/ui/IconSymbol';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
@@ -27,6 +27,7 @@ import {
   saveDraft,
   type DraftForm,
 } from '@/services/draftService';
+import React from 'react';
 
 type OutboxForm = Omit<DraftForm, 'status'> & { status: 'complete' };
 
@@ -278,9 +279,6 @@ export default function FormScreen({ route, navigation }: Props) {
               onPress={() => navigation.popToTop()}
             />
           </View>
-          <View style={styles.buttonWrapper}>
-            <Button title="Save as Draft" onPress={handleSaveDraft} />
-          </View>
         {!readOnly && (
             <>
               <View style={styles.buttonWrapper}>
@@ -296,7 +294,6 @@ export default function FormScreen({ route, navigation }: Props) {
               </View>
             </>
           )}
-        </View>
         </View>
       </ThemedView>
     </SafeAreaView>
