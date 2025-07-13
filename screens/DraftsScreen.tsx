@@ -1,15 +1,15 @@
-import { useCallback, useState } from 'react';
-import { StyleSheet, Pressable, FlatList, Button, View } from 'react-native';
-import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { MaterialIcons } from '@expo/vector-icons';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { useCallback, useState } from 'react';
+import { Button, FlatList, Pressable, StyleSheet, View } from 'react-native';
 
-import { ThemedView } from '@/components/ThemedView';
 import { ThemedText } from '@/components/ThemedText';
+import { ThemedView } from '@/components/ThemedView';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { RootStackParamList } from '@/navigation/types';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { getAllDrafts, type DraftForm } from '@/services/draftService';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 export default function DraftsScreen() {
   const navigation = useNavigation<
@@ -83,7 +83,7 @@ export default function DraftsScreen() {
 const styles = StyleSheet.create({
   fab: {
     position: 'absolute',
-    bottom: 32,
+    bottom: 100,
     right: 32,
     width: 56,
     height: 56,

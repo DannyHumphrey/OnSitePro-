@@ -1,3 +1,6 @@
+import { Picker } from '@react-native-picker/picker';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useState } from 'react';
 import {
   Button,
@@ -7,15 +10,12 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { Picker } from '@react-native-picker/picker';
-import { useNavigation } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
+import type { FormSchema } from '@/components/FormRenderer';
 import { ThemedText } from '@/components/ThemedText';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { RootStackParamList } from '@/navigation/types';
-import type { FormSchema } from '@/components/FormRenderer';
 
 export default function CreateFormScreen() {
   const navigation =
@@ -55,10 +55,11 @@ export default function CreateFormScreen() {
           </Picker>
         </View>
         <Button
-          title="Start"
+          title="Create"
           onPress={handleStart}
           color={Colors[colorScheme].tint}
         />
+        <Button title="Back" onPress={() => navigation.goBack()} />
       </ScrollView>
     </SafeAreaView>
   );
