@@ -5,6 +5,7 @@ import { Picker } from '@react-native-picker/picker';
 import * as FileSystem from 'expo-file-system';
 import * as ImageManipulator from 'expo-image-manipulator';
 import * as ImagePicker from 'expo-image-picker';
+import Signature from 'react-native-signature-canvas';
 import React, {
   forwardRef,
   memo,
@@ -123,7 +124,7 @@ export type VisibleWhen = {
 
 export type FormField =
   | {
-      type: 'text' | 'date' | 'photo';
+      type: 'text' | 'date' | 'photo' | 'signature';
       label: string;
       key: string;
       required?: boolean;
@@ -391,6 +392,81 @@ const FieldRenderer = memo(function FieldRenderer({
           )}
         </View>
       );
+    case 'signature':
+      const sigUri: string | undefined = value;
+      const [sigPreview, setSigPreview] = useState<string | null>(null);
+      const signatureRef = useRef<any>(null);
+      const [showPad, setShowPad] = useState(!sigUri);
+
+      const handleSaveSignature = async (dataUrl: string) => {
+        if (readOnly) return;
+        const base64 = dataUrl.replace(/^data:image\/png;base64,/, '');
+        const formsDir = `${FileSystem.documentDirectory}forms/`;
+        try {
+          await FileSystem.makeDirectoryAsync(formsDir, { intermediates: true });
+        } catch {}
+        const filename = `${uuidv4()}.png`;
+        const dest = formsDir + filename;
+        await FileSystem.writeAsStringAsync(dest, base64, {
+          encoding: FileSystem.EncodingType.Base64,
+        });
+        handleChange(path, dest);
+        setShowPad(false);
+      };
+
+      return (
+        <View
+          style={[styles.fieldContainer, error && styles.errorContainer]}
+          key={key}
+          onLayout={onLayout}>
+          <Text style={styles.label}>{field.label}</Text>
+          {showPad && !readOnly ? (
+            <>
+              <Signature
+                ref={signatureRef}
+                onOK={handleSaveSignature}
+                webStyle=".m-signature-pad--footer { display: none; margin: 0px; }"
+              />
+              <Button
+                title="Clear"
+                onPress={() => signatureRef.current?.clearSignature()}
+              />
+            </>
+          ) : sigUri ? (
+            <View style={{ gap: 8 }}>
+              <TouchableOpacity onPress={() => setSigPreview(sigUri)}>
+                <Image source={{ uri: sigUri }} style={styles.signatureImage} />
+              </TouchableOpacity>
+              {!readOnly && (
+                <Button
+                  title="Redo"
+                  onPress={() => {
+                    handleChange(path, undefined);
+                    setShowPad(true);
+                  }}
+                />
+              )}
+            </View>
+          ) : null}
+          {error && <Text style={styles.errorText}>{error}</Text>}
+          {sigPreview && (
+            <Modal
+              transparent
+              visible
+              onRequestClose={() => setSigPreview(null)}>
+              <TouchableOpacity
+                style={styles.previewContainer}
+                onPress={() => setSigPreview(null)}>
+                <Image
+                  source={{ uri: sigPreview }}
+                  style={styles.previewImage}
+                  resizeMode="contain"
+                />
+              </TouchableOpacity>
+            </Modal>
+          )}
+        </View>
+      );
     default:
       return null;
   }
@@ -404,6 +480,9 @@ export const FormRenderer = forwardRef<FormRendererRef, FormRendererProps>(
         switch (f.type) {
           case 'photo':
             obj[f.key] = [];
+            break;
+          case 'signature':
+            obj[f.key] = '';
             break;
           case 'boolean':
             obj[f.key] = false;
@@ -550,6 +629,11 @@ export const FormRenderer = forwardRef<FormRendererRef, FormRendererProps>(
               val.forEach((uri, idx) => {
                 photos.push({ key: `${path.join('.')}.${idx}`, uri });
               });
+            }
+          } else if (field.type === 'signature') {
+            const uri = getNestedValue(formState, path);
+            if (typeof uri === 'string' && uri) {
+              photos.push({ key: path.join('.'), uri });
             }
           }
         });
@@ -874,6 +958,12 @@ const styles = StyleSheet.create({
     marginTop: 8,
     width: 100,
     height: 100,
+  },
+  signatureImage: {
+    width: 300,
+    height: 150,
+    borderWidth: 1,
+    borderColor: '#ccc',
   },
   photoList: {
     flexDirection: 'row',
