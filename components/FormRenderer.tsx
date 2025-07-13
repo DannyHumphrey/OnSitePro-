@@ -4,6 +4,7 @@ import DateTimePicker, {
 import { Picker } from '@react-native-picker/picker';
 import * as FileSystem from 'expo-file-system';
 import * as ImagePicker from 'expo-image-picker';
+import * as ImageManipulator from 'expo-image-manipulator';
 import React, {
   forwardRef,
   memo,
@@ -20,6 +21,8 @@ import {
   Switch,
   Text,
   TextInput,
+  Modal,
+  TouchableOpacity,
   View,
   LayoutChangeEvent,
 } from 'react-native';
@@ -216,6 +219,7 @@ const FieldRenderer = memo(function FieldRenderer({
   );
   if (!isVisible) return null;
   const value = getNestedValue(formState, path);
+  const [preview, setPreview] = useState<string | null>(null);
 
   const onLayout = (e: LayoutChangeEvent) => {
     registerFieldPosition(key, e.nativeEvent.layout.y);
@@ -350,14 +354,41 @@ const FieldRenderer = memo(function FieldRenderer({
         </View>
       );
     case 'photo':
+      const photos: string[] = Array.isArray(value) ? value : [];
+      const [preview, setPreview] = useState<string | null>(null);
+
+      const handleRemove = (idx: number) => {
+        if (readOnly) return;
+        const updated = photos.filter((_, i) => i !== idx);
+        handleChange(path, updated);
+      };
+
       return (
-        <View style={[styles.fieldContainer, error && styles.errorContainer]} key={key}>
+        <View style={[styles.fieldContainer, error && styles.errorContainer]} key={key} onLayout={onLayout}>
           <Text style={styles.label}>{field.label}</Text>
           {!readOnly && (
             <Button title="Take Photo" onPress={() => handlePickImage(path)} />
           )}
-          {value && <Image source={{ uri: value }} style={styles.thumbnail} />}
+          <View style={styles.photoList}>
+            {photos.map((uri, idx) => (
+              <View key={uri} style={styles.photoWrapper}>
+                <TouchableOpacity onPress={() => setPreview(uri)}>
+                  <Image source={{ uri }} style={styles.thumbnail} />
+                </TouchableOpacity>
+                {!readOnly && (
+                  <Button title="Delete" onPress={() => handleRemove(idx)} />
+                )}
+              </View>
+            ))}
+          </View>
           {error && <Text style={styles.errorText}>{error}</Text>}
+          {preview && (
+            <Modal transparent visible onRequestClose={() => setPreview(null)}>
+              <TouchableOpacity style={styles.previewContainer} onPress={() => setPreview(null)}>
+                <Image source={{ uri: preview }} style={styles.previewImage} resizeMode="contain" />
+              </TouchableOpacity>
+            </Modal>
+          )}
         </View>
       );
     default:
@@ -372,7 +403,7 @@ export const FormRenderer = forwardRef<FormRendererRef, FormRendererProps>(
       section.fields.forEach((f) => {
         switch (f.type) {
           case 'photo':
-            obj[f.key] = undefined;
+            obj[f.key] = [];
             break;
           case 'boolean':
             obj[f.key] = false;
@@ -391,6 +422,23 @@ export const FormRenderer = forwardRef<FormRendererRef, FormRendererProps>(
       return obj;
     }
 
+    function normalizeSectionData(section: FormSection, data: any) {
+      const result: Record<string, any> = { ...data };
+      section.fields.forEach((f) => {
+        if (f.type === 'photo') {
+          const val = result[f.key];
+          if (val === undefined || val === null) {
+            result[f.key] = [];
+          } else if (Array.isArray(val)) {
+            result[f.key] = val;
+          } else {
+            result[f.key] = [val];
+          }
+        }
+      });
+      return result;
+    }
+
     function buildInitialState() {
       const state: Record<string, any> = {};
       schema.forEach((section) => {
@@ -398,13 +446,16 @@ export const FormRenderer = forwardRef<FormRendererRef, FormRendererProps>(
           const arr: Record<string, any>[] = [];
           const initialArr = (initialData?.[section.key] as any[]) ?? [];
           initialArr.forEach((entry) => {
-            arr.push({ ...createEmptySection(section), ...entry });
+            arr.push({
+              ...createEmptySection(section),
+              ...normalizeSectionData(section, entry),
+            });
           });
           state[section.key] = arr;
         } else {
           state[section.key] = {
             ...createEmptySection(section),
-            ...(initialData?.[section.key] ?? {}),
+            ...normalizeSectionData(section, initialData?.[section.key] ?? {}),
           };
         }
       });
@@ -495,7 +546,11 @@ export const FormRenderer = forwardRef<FormRendererRef, FormRendererProps>(
         fields.forEach(({ field, path }) => {
           if (field.type === 'photo') {
             const val = getNestedValue(formState, path);
-            if (val) photos.push({ key: path.join('.'), uri: val });
+            if (Array.isArray(val)) {
+              val.forEach((uri, idx) => {
+                photos.push({ key: `${path.join('.')}.${idx}`, uri });
+              });
+            }
           }
         });
         return photos;
@@ -520,15 +575,31 @@ export const FormRenderer = forwardRef<FormRendererRef, FormRendererProps>(
       });
       if (!result.canceled) {
         const asset = result.assets[0];
+        let width = asset.width ?? 0;
+        let height = asset.height ?? 0;
+        const maxDim = Math.max(width, height);
+        if (maxDim > 1000) {
+          const scale = 1000 / maxDim;
+          width = Math.round(width * scale);
+          height = Math.round(height * scale);
+        }
+        const manipulated = await ImageManipulator.manipulateAsync(
+          asset.uri,
+          [{ resize: { width, height } }],
+          { compress: 0.8, format: ImageManipulator.SaveFormat.JPEG },
+        );
+
         const formsDir = `${FileSystem.documentDirectory}forms/`;
         try {
           await FileSystem.makeDirectoryAsync(formsDir, { intermediates: true });
         } catch {}
-        const extension = asset.uri.split('.').pop() || 'jpg';
+        const extension = manipulated.uri.split('.').pop() || 'jpg';
         const filename = `${uuidv4()}.${extension}`;
         const dest = formsDir + filename;
-        await FileSystem.copyAsync({ from: asset.uri, to: dest });
-        handleChange(path, dest);
+        await FileSystem.copyAsync({ from: manipulated.uri, to: dest });
+        const current = getNestedValue(formState, path);
+        const arr = Array.isArray(current) ? [...current, dest] : [dest];
+        handleChange(path, arr);
       }
     };
 
@@ -802,6 +873,26 @@ const styles = StyleSheet.create({
     marginTop: 8,
     width: 100,
     height: 100,
+  },
+  photoList: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 8,
+  },
+  photoWrapper: {
+    alignItems: 'center',
+    gap: 4,
+  },
+  previewContainer: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.9)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  previewImage: {
+    width: '100%',
+    height: '100%',
   },
   sectionContainer: {
     gap: 8,
