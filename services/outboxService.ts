@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import jwtDecode from 'jwt-decode';
+import * as FileSystem from 'expo-file-system';
 import type { DraftForm } from './draftService';
 
 export type OutboxForm = Omit<DraftForm, 'status'> & { status: 'complete' };
@@ -7,6 +8,53 @@ export type OutboxForm = Omit<DraftForm, 'status'> & { status: 'complete' };
 const INDEX_KEY = 'outbox:index';
 const SENT_INDEX_KEY = 'sent:index';
 const SYNC_ENDPOINT = 'https://your-api.com/api/Surveys/Submit';
+
+async function convertImagesToBase64(obj: any): Promise<any> {
+  if (Array.isArray(obj)) {
+    const arr = [] as any[];
+    for (const item of obj) {
+      if (typeof item === 'string' && item.startsWith('file://')) {
+        try {
+          const base64 = await FileSystem.readAsStringAsync(item, {
+            encoding: FileSystem.EncodingType.Base64,
+          });
+          arr.push(`data:image/jpeg;base64,${base64}`);
+        } catch {
+          arr.push(null);
+        }
+      } else if (Array.isArray(item) || (item && typeof item === 'object')) {
+        arr.push(await convertImagesToBase64(item));
+      } else {
+        arr.push(item);
+      }
+    }
+    return arr;
+  }
+
+  if (obj && typeof obj === 'object') {
+    const newObj: any = {};
+    for (const key in obj) {
+      const value = obj[key];
+      if (typeof value === 'string' && value.startsWith('file://')) {
+        try {
+          const base64 = await FileSystem.readAsStringAsync(value, {
+            encoding: FileSystem.EncodingType.Base64,
+          });
+          newObj[key] = `data:image/jpeg;base64,${base64}`;
+        } catch {
+          newObj[key] = null;
+        }
+      } else if (Array.isArray(value) || (value && typeof value === 'object')) {
+        newObj[key] = await convertImagesToBase64(value);
+      } else {
+        newObj[key] = value;
+      }
+    }
+    return newObj;
+  }
+
+  return obj;
+}
 
 export async function getAllOutbox(): Promise<OutboxForm[]> {
   const indexRaw = await AsyncStorage.getItem(INDEX_KEY);
@@ -35,6 +83,8 @@ export async function syncOutbox() {
 
       const decoded = jwtDecode<{ UserID: string }>(token);
 
+      const base64Data = await convertImagesToBase64(form.data);
+
       const payload = {
         Active: true,
         Address1: form.data.Address1 || '',
@@ -54,7 +104,7 @@ export async function syncOutbox() {
         UserInfoId: Number((decoded as any).UserID),
         Id: 0,
         guid: form.id,
-        Surveys: [form.data],
+        Surveys: [base64Data],
       };
 
       const response = await fetch(SYNC_ENDPOINT, {
