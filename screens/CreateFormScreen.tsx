@@ -25,9 +25,29 @@ export default function CreateFormScreen() {
   const [formType, setFormType] = useState<'demo'>('demo');
 
   const schema: FormSchema = [
-    { type: 'text', label: 'Full Name', key: 'fullName', required: true },
-    { type: 'date', label: 'Date of Visit', key: 'visitDate' },
-    { type: 'photo', label: 'Take a Picture', key: 'photo' },
+    {
+      key: 'personInvolved',
+      label: 'Person Involved',
+      fields: [
+        {
+          type: 'text',
+          label: 'Full Name',
+          key: 'fullName',
+          required: true,
+        },
+        { type: 'date', label: 'Date of Visit', key: 'visitDate' },
+        { type: 'photo', label: 'Take a Picture', key: 'photo' },
+      ],
+    },
+    {
+      key: 'witnessStatements',
+      label: 'Witness Statement',
+      repeatable: true,
+      fields: [
+        { type: 'text', label: 'Name', key: 'name' },
+        { type: 'text', label: 'Statement', key: 'statement' },
+      ],
+    },
   ];
 
   const handleStart = () => {
