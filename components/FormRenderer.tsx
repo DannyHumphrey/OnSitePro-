@@ -169,6 +169,7 @@ export type FormSchema = FormSection[];
 export type FormRendererProps = {
   schema: FormSchema;
   initialData?: Record<string, any>;
+  readOnly?: boolean;
 };
 
 export type FormRendererRef = {
@@ -192,6 +193,7 @@ export type FieldRendererProps = {
   handlePickImage: (path: (string | number)[]) => void;
   error?: string;
   registerFieldPosition: (key: string, y: number) => void;
+  readOnly?: boolean;
 };
 
 const FieldRenderer = memo(function FieldRenderer({
@@ -205,6 +207,7 @@ const FieldRenderer = memo(function FieldRenderer({
   handlePickImage,
   error,
   registerFieldPosition,
+  readOnly,
 }: FieldRendererProps) {
   const key = path.join('.');
   const isVisible = React.useMemo(
@@ -226,6 +229,7 @@ const FieldRenderer = memo(function FieldRenderer({
           <TextInput
             style={[styles.textInput, error && styles.errorInput]}
             value={value}
+            editable={!readOnly}
             onChangeText={(text) => handleChange(path, text)}
           />
           {error && <Text style={styles.errorText}>{error}</Text>}
@@ -241,6 +245,7 @@ const FieldRenderer = memo(function FieldRenderer({
           <Switch
             value={!!value}
             onValueChange={(val) => handleChange(path, val)}
+            disabled={readOnly}
           />
           {error && <Text style={styles.errorText}>{error}</Text>}
         </View>
@@ -253,6 +258,7 @@ const FieldRenderer = memo(function FieldRenderer({
             style={[styles.textInput, error && styles.errorInput]}
             keyboardType="numeric"
             value={value !== undefined ? String(value) : ''}
+            editable={!readOnly}
             onChangeText={(text) =>
               handleChange(path, text === '' ? undefined : Number(text))
             }
@@ -265,7 +271,11 @@ const FieldRenderer = memo(function FieldRenderer({
         <View style={styles.fieldContainer} key={key} onLayout={onLayout}>
           <Text style={styles.label}>{field.label}</Text>
           <View style={[styles.pickerWrapper, error && styles.errorInput]}>
-            <Picker selectedValue={value} onValueChange={(val) => handleChange(path, val)}>
+            <Picker
+              selectedValue={value}
+              onValueChange={(val) => handleChange(path, val)}
+              enabled={!readOnly}
+            >
               <Picker.Item label="" value="" />
               {field.options.map((opt) => (
                 <Picker.Item key={opt} label={opt} value={opt} />
@@ -277,16 +287,23 @@ const FieldRenderer = memo(function FieldRenderer({
       );
     case 'multiselect':
       return (
-        <View style={[styles.fieldContainer, error && styles.errorContainer]} key={key} onLayout={onLayout}>
+        <View
+          style={[styles.fieldContainer, error && styles.errorContainer]}
+          key={key}
+          onLayout={onLayout}>
           <Text style={styles.label}>{field.label}</Text>
           {field.options.map((opt) => {
             const selected = Array.isArray(value) ? value.includes(opt) : false;
             return (
-              <View key={opt} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <View
+                key={opt}
+                style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                 <Switch
                   value={selected}
                   onValueChange={(val) => {
-                    const current: string[] = Array.isArray(value) ? [...value] : [];
+                    const current: string[] = Array.isArray(value)
+                      ? [...value]
+                      : [];
                     if (val) {
                       if (!current.includes(opt)) current.push(opt);
                     } else {
@@ -295,6 +312,7 @@ const FieldRenderer = memo(function FieldRenderer({
                     }
                     handleChange(path, current);
                   }}
+                  disabled={readOnly}
                 />
                 <Text>{opt}</Text>
               </View>
@@ -310,6 +328,7 @@ const FieldRenderer = memo(function FieldRenderer({
           <Button
             title={value ? new Date(value).toLocaleDateString() : 'Select Date'}
             onPress={() => setActiveDateKey(key)}
+            disabled={readOnly}
           />
           {activeDateKey === key && (
             <DateTimePicker
@@ -334,7 +353,9 @@ const FieldRenderer = memo(function FieldRenderer({
       return (
         <View style={[styles.fieldContainer, error && styles.errorContainer]} key={key}>
           <Text style={styles.label}>{field.label}</Text>
-          <Button title="Take Photo" onPress={() => handlePickImage(path)} />
+          {!readOnly && (
+            <Button title="Take Photo" onPress={() => handlePickImage(path)} />
+          )}
           {value && <Image source={{ uri: value }} style={styles.thumbnail} />}
           {error && <Text style={styles.errorText}>{error}</Text>}
         </View>
@@ -345,7 +366,7 @@ const FieldRenderer = memo(function FieldRenderer({
 });
 
 export const FormRenderer = forwardRef<FormRendererRef, FormRendererProps>(
-  ({ schema, initialData }, ref) => {
+  ({ schema, initialData, readOnly }, ref) => {
     function createEmptySection(section: FormSection) {
       const obj: Record<string, any> = {};
       section.fields.forEach((f) => {
@@ -685,6 +706,7 @@ export const FormRenderer = forwardRef<FormRendererRef, FormRendererProps>(
                       registerFieldPosition={(k, y) => {
                         fieldPositions.current[k] = y;
                       }}
+                      readOnly={readOnly}
                     />
                   ))}
                   <Button
@@ -724,6 +746,7 @@ export const FormRenderer = forwardRef<FormRendererRef, FormRendererProps>(
               registerFieldPosition={(k, y) => {
                 fieldPositions.current[k] = y;
               }}
+              readOnly={readOnly}
             />
           ))}
         </Collapsible>

@@ -32,7 +32,14 @@ type OutboxForm = Omit<DraftForm, 'status'> & { status: 'complete' };
 type Props = NativeStackScreenProps<DraftsStackParamList, 'FormScreen'>;
 
 export default function FormScreen({ route, navigation }: Props) {
-  const { schema, formName, formType = 'demo', draftId, data } = route.params;
+  const {
+    schema,
+    formName,
+    formType = 'demo',
+    draftId,
+    data,
+    readOnly = false,
+  } = route.params;
   const formRef = useRef<FormRendererRef>(null);
   const colorScheme = useColorScheme() ?? 'light';
   const [existingDraft, setExistingDraft] = useState<DraftForm | null>(null);
@@ -206,7 +213,12 @@ export default function FormScreen({ route, navigation }: Props) {
             </TouchableOpacity>
           </View>
         )}
-        <FormRenderer ref={formRef} schema={schema} initialData={initialData} />
+        <FormRenderer
+          ref={formRef}
+          schema={schema}
+          initialData={initialData}
+          readOnly={readOnly}
+        />
         <Modal
           transparent
           animationType="slide"
@@ -258,21 +270,22 @@ export default function FormScreen({ route, navigation }: Props) {
         </Modal>
         <View style={styles.buttonRow}>
           <View style={styles.buttonWrapper}>
-            <Button
-              title="Back"
-              onPress={() => navigation.popToTop()}
-            />
+            <Button title="Back" onPress={() => navigation.popToTop()} />
           </View>
-          <View style={styles.buttonWrapper}>
-            <Button title="Save as Draft" onPress={handleSaveDraft} />
-          </View>
-          <View style={styles.buttonWrapper}>
-            <Button
-              title="Submit"
-              onPress={handleSubmitForm}
-              color={Colors[colorScheme].tint}
-            />
-          </View>
+          {!readOnly && (
+            <>
+              <View style={styles.buttonWrapper}>
+                <Button title="Save as Draft" onPress={handleSaveDraft} />
+              </View>
+              <View style={styles.buttonWrapper}>
+                <Button
+                  title="Submit"
+                  onPress={handleSubmitForm}
+                  color={Colors[colorScheme].tint}
+                />
+              </View>
+            </>
+          )}
         </View>
       </ThemedView>
     </SafeAreaView>
