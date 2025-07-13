@@ -6,7 +6,7 @@ export type OutboxForm = Omit<DraftForm, 'status'> & { status: 'complete' };
 
 const INDEX_KEY = 'outbox:index';
 const SENT_INDEX_KEY = 'sent:index';
-const SYNC_ENDPOINT = 'https://your-api.com/api/Surveys/Submit';
+const SYNC_ENDPOINT = 'https://uat.onsite-lite.co.uk/api/Instance/SaveInstance';
 
 export async function getAllOutbox(): Promise<OutboxForm[]> {
   const indexRaw = await AsyncStorage.getItem(INDEX_KEY);
