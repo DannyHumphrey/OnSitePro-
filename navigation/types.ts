@@ -10,6 +10,7 @@ export type DraftsStackParamList = {
     formName?: string;
     data?: Record<string, any>;
     draftId?: string;
+    readOnly?: boolean;
   };
 };
 

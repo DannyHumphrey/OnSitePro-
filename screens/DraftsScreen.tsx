@@ -8,7 +8,9 @@ import {
   Pressable,
   StyleSheet,
   View,
+  TextInput,
 } from 'react-native';
+import { Picker } from '@react-native-picker/picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as FileSystem from 'expo-file-system';
 
@@ -32,6 +34,9 @@ export default function DraftsScreen() {
   >();
   const colorScheme = useColorScheme() ?? 'light';
   const [drafts, setDrafts] = useState<DraftForm[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'az'>('newest');
+  const [filterBy, setFilterBy] = useState('All');
   const { setCounts } = useFormCounts();
 
   const loadDrafts = useCallback(async () => {
@@ -98,6 +103,31 @@ export default function DraftsScreen() {
     ]);
   };
 
+  const filteredDrafts = drafts.filter((d) => {
+    const q = searchQuery.toLowerCase();
+    const address =
+      typeof d.data?.address === 'string'
+        ? d.data.address.toLowerCase()
+        : '';
+    const matchesQuery =
+      d.name.toLowerCase().includes(q) ||
+      d.formType.toLowerCase().includes(q) ||
+      address.includes(q);
+    const matchesFilter = filterBy === 'All' || d.formType === filterBy;
+    return matchesQuery && matchesFilter;
+  });
+
+  const sortedDrafts = [...filteredDrafts].sort((a, b) => {
+    switch (sortBy) {
+      case 'oldest':
+        return a.createdAt.localeCompare(b.createdAt);
+      case 'az':
+        return a.name.localeCompare(b.name);
+      default:
+        return b.createdAt.localeCompare(a.createdAt);
+    }
+  });
+
   const renderItem = ({ item }: { item: DraftForm }) => (
     <View style={styles.draftItem}>
       <View style={styles.draftHeader}>
@@ -120,14 +150,35 @@ export default function DraftsScreen() {
     </View>
   );
 
+  const formTypes = Array.from(new Set(drafts.map((d) => d.formType)));
+
   return (
     <ThemedView style={{ flex: 1 }}>
+      <View style={styles.controls}>
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Search"
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+        />
+        <Picker selectedValue={sortBy} onValueChange={(v) => setSortBy(v)}>
+          <Picker.Item label="Newest first" value="newest" />
+          <Picker.Item label="Oldest first" value="oldest" />
+          <Picker.Item label="A–Z" value="az" />
+        </Picker>
+        <Picker selectedValue={filterBy} onValueChange={(v) => setFilterBy(v)}>
+          <Picker.Item label="All" value="All" />
+          {formTypes.map((t) => (
+            <Picker.Item key={t} label={t} value={t} />
+          ))}
+        </Picker>
+      </View>
       <FlatList
-        data={drafts}
+        data={sortedDrafts}
         keyExtractor={(item) => item.id}
         renderItem={renderItem}
         contentContainerStyle={
-          drafts.length === 0 ? styles.emptyContainer : styles.listContainer
+          sortedDrafts.length === 0 ? styles.emptyContainer : styles.listContainer
         }
         ListEmptyComponent={
           <ThemedView style={styles.emptyContainer}>
@@ -152,6 +203,16 @@ export default function DraftsScreen() {
 }
 
 const styles = StyleSheet.create({
+  controls: {
+    padding: 16,
+    gap: 8,
+  },
+  searchInput: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 4,
+    padding: 8,
+  },
   fab: {
     position: 'absolute',
     bottom: 100,

@@ -33,7 +33,14 @@ type OutboxForm = Omit<DraftForm, 'status'> & { status: 'complete' };
 type Props = NativeStackScreenProps<DraftsStackParamList, 'FormScreen'>;
 
 export default function FormScreen({ route, navigation }: Props) {
-  const { schema, formName, formType = 'demo', draftId, data } = route.params;
+  const {
+    schema,
+    formName,
+    formType = 'demo',
+    draftId,
+    data,
+    readOnly = false,
+  } = route.params;
   const formRef = useRef<FormRendererRef>(null);
   const colorScheme = useColorScheme() ?? 'light';
   const isOnline = useNetworkStatus();
@@ -208,12 +215,13 @@ export default function FormScreen({ route, navigation }: Props) {
             </TouchableOpacity>
           </View>
         )}
+
         {!isOnline && (
           <ThemedText style={styles.offlineText}>
             You are offline. Submissions are disabled.
           </ThemedText>
         )}
-        <FormRenderer ref={formRef} schema={schema} initialData={initialData} />
+        <FormRenderer ref={formRef} schema={schema} initialData={initialData} readOnly={readOnly}/>
         <Modal
           transparent
           animationType="slide"
@@ -273,13 +281,21 @@ export default function FormScreen({ route, navigation }: Props) {
           <View style={styles.buttonWrapper}>
             <Button title="Save as Draft" onPress={handleSaveDraft} />
           </View>
-          <View style={styles.buttonWrapper}>
-          <Button
-            title="Submit"
-            onPress={handleSubmitForm}
-            color={Colors[colorScheme].tint}
-            disabled={!isOnline}
-          />
+        {!readOnly && (
+            <>
+              <View style={styles.buttonWrapper}>
+                <Button title="Save as Draft" onPress={handleSaveDraft} />
+              </View>
+              <View style={styles.buttonWrapper}>
+                <Button
+                  title="Submit"
+                  onPress={handleSubmitForm}
+                  color={Colors[colorScheme].tint}
+                  disabled={!isOnline}
+                />
+              </View>
+            </>
+          )}
         </View>
         </View>
       </ThemedView>
