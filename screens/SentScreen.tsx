@@ -5,6 +5,7 @@ import { FlatList, StyleSheet, TouchableOpacity } from 'react-native';
 
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
+import { StatusBadge } from '@/components/StatusBadge';
 import type { FormSchema } from '@/components/FormRenderer';
 import { useFormCounts } from '@/context/FormCountsContext';
 
@@ -15,6 +16,8 @@ export type SentForm = {
   schema: FormSchema;
   data: Record<string, any>;
   updatedAt: string;
+  isSynced?: boolean;
+  syncedAt?: string;
 };
 
 export default function SentScreen() {
@@ -64,8 +67,18 @@ export default function SentScreen() {
       <ThemedText type="defaultSemiBold">{item.name}</ThemedText>
       <ThemedText>{item.formType}</ThemedText>
       <ThemedText style={styles.dateText}>
-        {new Date(item.updatedAt).toLocaleDateString()}
+        Submitted {new Date(item.updatedAt).toLocaleDateString()}
       </ThemedText>
+      {item.syncedAt && (
+        <ThemedText style={styles.dateText}>
+          Last synced at {new Date(item.syncedAt).toLocaleDateString()}
+        </ThemedText>
+      )}
+      <StatusBadge
+        label={item.isSynced ? 'Synced' : 'Submitted'}
+        icon={item.isSynced ? '✅' : '🟢'}
+        color={item.isSynced ? '#5cb85c' : '#0a7ea4'}
+      />
     </TouchableOpacity>
   );
 

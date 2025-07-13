@@ -4,6 +4,7 @@ import { useFocusEffect } from '@react-navigation/native';
 
 import { ThemedView } from '@/components/ThemedView';
 import { ThemedText } from '@/components/ThemedText';
+import { StatusBadge } from '@/components/StatusBadge';
 import {
   getAllOutbox,
   syncOutbox,
@@ -48,7 +49,16 @@ export default function OutboxScreen() {
       <ThemedText style={styles.dateText}>
         {new Date(item.createdAt).toLocaleDateString()}
       </ThemedText>
-      <ThemedText style={styles.status}>Ready to sync</ThemedText>
+      {item.syncedAt && (
+        <ThemedText style={styles.dateText}>
+          Last synced at {new Date(item.syncedAt).toLocaleDateString()}
+        </ThemedText>
+      )}
+      <StatusBadge
+        label={item.syncError ? 'Failed' : 'Pending'}
+        icon={item.syncError ? '❌' : '🔄'}
+        color={item.syncError ? '#d9534f' : '#f0ad4e'}
+      />
       <Button title="Sync Now" onPress={handleSync} />
     </View>
   );
@@ -95,9 +105,6 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   dateText: {
-    marginBottom: 8,
-  },
-  status: {
     marginBottom: 8,
   },
 });
