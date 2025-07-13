@@ -1,14 +1,28 @@
 import { MaterialIcons } from '@expo/vector-icons';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { useCallback, useState } from 'react';
-import { Button, FlatList, Pressable, StyleSheet, View } from 'react-native';
+import {
+  Alert,
+  Button,
+  FlatList,
+  Pressable,
+  StyleSheet,
+  View,
+} from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as FileSystem from 'expo-file-system';
 
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { RootStackParamList } from '@/navigation/types';
-import { getAllDrafts, type DraftForm } from '@/services/draftService';
+import {
+  getAllDrafts,
+  getDraftById,
+  type DraftForm,
+} from '@/services/draftService';
+import { deleteLocalPhoto } from '@/services/photoService';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 export default function DraftsScreen() {
@@ -39,9 +53,63 @@ export default function DraftsScreen() {
     });
   };
 
+  const collectImageUris = (obj: any): string[] => {
+    if (!obj) return [];
+    if (typeof obj === 'string') {
+      return obj.startsWith(FileSystem.documentDirectory) ? [obj] : [];
+    }
+    if (Array.isArray(obj)) {
+      return obj.flatMap((i) => collectImageUris(i));
+    }
+    if (typeof obj === 'object') {
+      return Object.values(obj).flatMap((v) => collectImageUris(v));
+    }
+    return [];
+  };
+
+  const handleDelete = async (id: string) => {
+    try {
+      const draft = await getDraftById(id);
+      if (draft) {
+        const uris = collectImageUris(draft.data);
+        await Promise.all(uris.map((u) => deleteLocalPhoto(u)));
+      }
+
+      await AsyncStorage.removeItem(`drafts:${id}`);
+      await AsyncStorage.removeItem(`draft:${id}`);
+      const indexRaw = await AsyncStorage.getItem('drafts:index');
+      const index = indexRaw ? (JSON.parse(indexRaw) as string[]) : [];
+      const newIndex = index.filter((d) => d !== id);
+      await AsyncStorage.setItem('drafts:index', JSON.stringify(newIndex));
+      await loadDrafts();
+    } catch (err) {
+      console.log('Error deleting draft:', err);
+      Alert.alert('Error', 'Failed to delete draft.');
+    }
+  };
+
+  const confirmDelete = (id: string) => {
+    Alert.alert('Delete Draft', 'Are you sure you want to delete this draft?', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Delete', style: 'destructive', onPress: () => handleDelete(id) },
+    ]);
+  };
+
   const renderItem = ({ item }: { item: DraftForm }) => (
     <View style={styles.draftItem}>
-      <ThemedText type="defaultSemiBold">{item.name}</ThemedText>
+      <View style={styles.draftHeader}>
+        <ThemedText type="defaultSemiBold">{item.name}</ThemedText>
+        <Pressable
+          onPress={() => confirmDelete(item.id)}
+          accessibilityLabel="Delete Draft"
+          style={styles.deleteButton}>
+          <MaterialIcons
+            name="delete"
+            size={20}
+            color={Colors[colorScheme].tint}
+          />
+        </Pressable>
+      </View>
       <ThemedText style={styles.dateText}>
         {new Date(item.createdAt).toLocaleDateString()}
       </ThemedText>
@@ -107,6 +175,14 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#ccc',
     borderRadius: 8,
+  },
+  draftHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  deleteButton: {
+    padding: 4,
   },
   dateText: {
     marginBottom: 8,
