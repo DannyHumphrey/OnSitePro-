@@ -6,6 +6,8 @@ import {
   Button,
   Image,
   Modal,
+  KeyboardAvoidingView,
+  Platform,
   ScrollView,
   StyleSheet,
   TouchableOpacity,
@@ -210,43 +212,84 @@ export default function FormScreen({ route, navigation }: Props) {
   return (
     <SafeAreaView style={{ flex: 1 }}>
       <ThemedView style={{ flex: 1 }}>
-        {formName && (
-          <View style={styles.header}>
-            <ThemedText type="title" style={{ flex: 1 }}>
-              {formName}
-            </ThemedText>
-            <TouchableOpacity onPress={() => setMenuVisible(true)}>
-              <IconSymbol
-                name="line.3.horizontal"
-                size={24}
-                color={Colors[colorScheme].text}
-              />
-            </TouchableOpacity>
-          </View>
-        )}
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          keyboardVerticalOffset={80}
+        >
+          <ScrollView
+            contentContainerStyle={styles.contentContainer}
+            keyboardShouldPersistTaps="handled"
+          >
+            {formName && (
+              <View style={styles.header}>
+                <ThemedText type="title" style={{ flex: 1 }}>
+                  {formName}
+                </ThemedText>
+                <TouchableOpacity onPress={() => setMenuVisible(true)}>
+                  <IconSymbol
+                    name="line.3.horizontal"
+                    size={24}
+                    color={Colors[colorScheme].text}
+                  />
+                </TouchableOpacity>
+              </View>
+            )}
 
-        {!isOnline && (
-          <ThemedText style={styles.offlineText}>
-            You are offline. Submissions are disabled.
-          </ThemedText>
-        )}
-        <FormRenderer ref={formRef} schema={schema} initialData={initialData} readOnly={readOnly}/>
+            {!isOnline && (
+              <ThemedText style={styles.offlineText}>
+                You are offline. Submissions are disabled.
+              </ThemedText>
+            )}
+            <FormRenderer
+              ref={formRef}
+              schema={schema}
+              initialData={initialData}
+              readOnly={readOnly}
+            />
+          </ScrollView>
+          <View style={styles.buttonRow}>
+            <View style={styles.buttonWrapper}>
+              <Button title="Back" onPress={() => navigation.popToTop()} />
+            </View>
+            {!readOnly && (
+              <>
+                <View style={styles.buttonWrapper}>
+                  <Button title="Save as Draft" onPress={handleSaveDraft} />
+                </View>
+                <View style={styles.buttonWrapper}>
+                  <Button
+                    title="Submit"
+                    onPress={handleSubmitForm}
+                    color={Colors[colorScheme].tint}
+                    disabled={!isOnline}
+                  />
+                </View>
+              </>
+            )}
+          </View>
+        </KeyboardAvoidingView>
         <Modal
           transparent
           animationType="slide"
           visible={menuVisible}
-          onRequestClose={() => setMenuVisible(false)}>
+          onRequestClose={() => setMenuVisible(false)}
+        >
           <SafeAreaView style={styles.modalOverlay}>
-            <View style={[styles.drawer, { backgroundColor: Colors[colorScheme].background }]}>
+            <View
+              style={[styles.drawer, { backgroundColor: Colors[colorScheme].background }]}
+            >
               <View style={styles.tabRow}>
                 <TouchableOpacity
                   style={[styles.tabButton, menuTab === 'sections' && styles.activeTab]}
-                  onPress={() => setMenuTab('sections')}>
+                  onPress={() => setMenuTab('sections')}
+                >
                   <ThemedText>Sections</ThemedText>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[styles.tabButton, menuTab === 'media' && styles.activeTab]}
-                  onPress={() => setMenuTab('media')}>
+                  onPress={() => setMenuTab('media')}
+                >
                   <ThemedText>Media</ThemedText>
                 </TouchableOpacity>
               </View>
@@ -256,7 +299,8 @@ export default function FormScreen({ route, navigation }: Props) {
                     <TouchableOpacity
                       key={item.key}
                       style={styles.menuItem}
-                      onPress={() => handleSectionPress(item.key)}>
+                      onPress={() => handleSectionPress(item.key)}
+                    >
                       <ThemedText>{item.label}</ThemedText>
                       {sectionErrors[item.key] && (
                         <IconSymbol
@@ -280,29 +324,6 @@ export default function FormScreen({ route, navigation }: Props) {
             </View>
           </SafeAreaView>
         </Modal>
-        <View style={styles.buttonRow}>
-          <View style={styles.buttonWrapper}>
-            <Button
-              title="Back"
-              onPress={() => navigation.popToTop()}
-            />
-          </View>
-        {!readOnly && (
-            <>
-              <View style={styles.buttonWrapper}>
-                <Button title="Save as Draft" onPress={handleSaveDraft} />
-              </View>
-              <View style={styles.buttonWrapper}>
-                <Button
-                  title="Submit"
-                  onPress={handleSubmitForm}
-                  color={Colors[colorScheme].tint}
-                  disabled={!isOnline}
-                />
-              </View>
-            </>
-          )}
-        </View>
       </ThemedView>
     </SafeAreaView>
   );
@@ -312,6 +333,9 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
+    padding: 16,
+  },
+  contentContainer: {
     padding: 16,
   },
   buttonRow: {
