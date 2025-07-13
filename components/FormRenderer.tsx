@@ -677,7 +677,10 @@ export const FormRenderer = forwardRef<FormRendererRef, FormRendererProps>(
     };
 
     return (
-      <ScrollView ref={scrollRef} contentContainerStyle={styles.container}>
+      <ScrollView
+        ref={scrollRef}
+        style={{ flex: 1 }}
+        contentContainerStyle={styles.container}>
         {schema.map((section) => renderSection(section))}
       </ScrollView>
     );
