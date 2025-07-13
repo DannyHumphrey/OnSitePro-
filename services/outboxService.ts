@@ -3,7 +3,12 @@ import jwtDecode from 'jwt-decode';
 import * as FileSystem from 'expo-file-system';
 import type { DraftForm } from './draftService';
 
-export type OutboxForm = Omit<DraftForm, 'status'> & { status: 'complete' };
+export type OutboxForm =
+  Omit<DraftForm, 'status'> & {
+    status: 'complete';
+    syncError?: string;
+    syncedAt?: string;
+  };
 
 const INDEX_KEY = 'outbox:index';
 const SENT_INDEX_KEY = 'sent:index';
@@ -120,7 +125,8 @@ export async function syncOutbox() {
         throw new Error(`HTTP ${response.status}`);
       }
 
-      const sentForm = { ...form, isSynced: true };
+      const now = new Date().toISOString();
+      const sentForm = { ...form, isSynced: true, syncError: undefined, syncedAt: now };
       await AsyncStorage.setItem(`sent:${id}`, JSON.stringify(sentForm));
 
       const sentIndexRaw = await AsyncStorage.getItem(SENT_INDEX_KEY);
@@ -135,6 +141,16 @@ export async function syncOutbox() {
       await AsyncStorage.setItem(INDEX_KEY, JSON.stringify(ids));
     } catch (err) {
       console.log('Error syncing form', id, err);
+      try {
+        const raw = await AsyncStorage.getItem(`outbox:${id}`);
+        if (raw) {
+          const failed = JSON.parse(raw) as OutboxForm;
+          failed.syncError = err instanceof Error ? err.message : String(err);
+          await AsyncStorage.setItem(`outbox:${id}`, JSON.stringify(failed));
+        }
+      } catch (e) {
+        console.log('Error recording sync failure', e);
+      }
     }
   }
 }

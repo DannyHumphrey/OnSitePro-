@@ -29,7 +29,11 @@ import {
 } from '@/services/draftService';
 import React from 'react';
 
-type OutboxForm = Omit<DraftForm, 'status'> & { status: 'complete' };
+type OutboxForm = Omit<DraftForm, 'status'> & {
+  status: 'complete';
+  syncError?: string;
+  syncedAt?: string;
+};
 
 type Props = NativeStackScreenProps<DraftsStackParamList, 'FormScreen'>;
 
@@ -122,6 +126,8 @@ export default function FormScreen({ route, navigation }: Props) {
           data: formData,
           status: 'complete',
           isSynced: false,
+          syncError: undefined,
+          syncedAt: undefined,
           createdAt: timestamp,
           updatedAt: timestamp,
         };
@@ -130,6 +136,8 @@ export default function FormScreen({ route, navigation }: Props) {
           ...draft,
           data: formData,
           status: 'complete',
+          syncError: undefined,
+          syncedAt: undefined,
           updatedAt: timestamp,
         };
       }
