@@ -58,7 +58,7 @@ export default function LoginScreen({ onLogin }: Props) {
         await AsyncStorage.setItem('auth:token', data.token);
         await AsyncStorage.setItem('auth:isLoggedIn', 'true');
         onLogin();
-        navigation.replace('Tabs');
+        navigation.replace('MainTabs');
       } else {
         Alert.alert('Invalid Login', 'Username or password is incorrect.');
       }

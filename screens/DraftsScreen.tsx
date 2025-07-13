@@ -16,7 +16,7 @@ import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
-import { RootStackParamList } from '@/navigation/types';
+import { DraftsStackParamList } from '@/navigation/types';
 import {
   getAllDrafts,
   getDraftById,
@@ -27,7 +27,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 export default function DraftsScreen() {
   const navigation = useNavigation<
-    NativeStackNavigationProp<RootStackParamList>
+    NativeStackNavigationProp<DraftsStackParamList>
   >();
   const colorScheme = useColorScheme() ?? 'light';
   const [drafts, setDrafts] = useState<DraftForm[]>([]);
@@ -44,7 +44,7 @@ export default function DraftsScreen() {
   );
 
   const handleResume = (draft: DraftForm) => {
-    navigation.navigate('Form', {
+    navigation.navigate('FormScreen', {
       schema: draft.schema,
       formType: draft.formType,
       formName: draft.name,
@@ -140,7 +140,7 @@ export default function DraftsScreen() {
             opacity: pressed ? 0.8 : 1,
           },
         ]}
-        onPress={() => navigation.navigate('CreateForm')}
+        onPress={() => navigation.navigate('CreateFormScreen')}
         accessibilityLabel="Create New Form">
         <MaterialIcons name="add" size={28} color="#fff" />
       </Pressable>
