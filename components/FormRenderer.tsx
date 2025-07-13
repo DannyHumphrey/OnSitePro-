@@ -41,11 +41,55 @@ function setNestedValue(obj: any, path: (string | number)[], value: any): any {
   return clone;
 }
 
+function parsePath(key: string): (string | number)[] {
+  return key.split('.').map((part) => {
+    return /^[0-9]+$/.test(part) ? Number(part) : part;
+  });
+}
+
+function evaluateCondition(
+  condition: VisibleWhenCondition,
+  state: Record<string, any>,
+): boolean {
+  const value = getNestedValue(state, parsePath(condition.key));
+  if ('equals' in condition) {
+    return value === condition.equals;
+  }
+  if ('notEquals' in condition) {
+    return value !== condition.notEquals;
+  }
+  return true;
+}
+
+function evaluateVisibleWhen(
+  rule: VisibleWhen | undefined,
+  state: Record<string, any>,
+): boolean {
+  if (!rule) return true;
+  const allPass = rule.all
+    ? rule.all.every((c) => evaluateCondition(c, state))
+    : true;
+  const anyPass = rule.any
+    ? rule.any.some((c) => evaluateCondition(c, state))
+    : true;
+  return allPass && anyPass;
+}
+
+export type VisibleWhenCondition =
+  | { key: string; equals: any }
+  | { key: string; notEquals: any };
+
+export type VisibleWhen = {
+  all?: VisibleWhenCondition[];
+  any?: VisibleWhenCondition[];
+};
+
 export type FormField = {
   type: 'text' | 'date' | 'photo';
   label: string;
   key: string;
   required?: boolean;
+  visibleWhen?: VisibleWhen;
 };
 
 export type FormSection = {
@@ -152,9 +196,21 @@ export const FormRenderer = forwardRef<FormRendererRef, FormRendererProps>(
       }
     };
 
-    const renderField = (field: FormField, path: (string | number)[]) => {
+    const FieldRenderer = ({
+      field,
+      path,
+    }: {
+      field: FormField;
+      path: (string | number)[];
+    }) => {
       const key = path.join('.');
+      const isVisible = React.useMemo(
+        () => evaluateVisibleWhen(field.visibleWhen, formState),
+        [formState, field.visibleWhen],
+      );
+      if (!isVisible) return null;
       const value = getNestedValue(formState, path);
+
       switch (field.type) {
         case 'text':
           return (
@@ -253,9 +309,13 @@ export const FormRenderer = forwardRef<FormRendererRef, FormRendererProps>(
                 key={ids[idx] ?? `${section.key}-${idx}`}
                 title={`${section.label} ${idx + 1}`}>
                 <View style={styles.sectionContent}>
-                  {section.fields.map((f) =>
-                    renderField(f, [section.key, idx, f.key]),
-                  )}
+                  {section.fields.map((f) => (
+                    <FieldRenderer
+                      key={`${section.key}-${idx}-${f.key}`}
+                      field={f}
+                      path={[section.key, idx, f.key]}
+                    />
+                  ))}
                   <Button
                     title="Remove"
                     onPress={() => removeSection(section.key, idx)}
@@ -269,7 +329,13 @@ export const FormRenderer = forwardRef<FormRendererRef, FormRendererProps>(
 
       return (
         <Collapsible key={section.key} title={section.label}>
-          {section.fields.map((f) => renderField(f, [section.key, f.key]))}
+          {section.fields.map((f) => (
+            <FieldRenderer
+              key={`${section.key}-${f.key}`}
+              field={f}
+              path={[section.key, f.key]}
+            />
+          ))}
         </Collapsible>
       );
     };
