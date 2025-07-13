@@ -45,6 +45,38 @@ export default function CreateFormScreen() {
         },
         { type: 'date', label: 'Date of Visit', key: 'visitDate' },
         { type: 'photo', label: 'Take a Picture', key: 'photo' },
+        {
+          type: 'select',
+          label: 'Injury Severity',
+          key: 'injurySeverity',
+          options: [
+            'Minor',
+            'Major',
+            'Severe',
+            'Fatal'
+          ]
+        },
+        {
+          type: 'multiselect',
+          label: 'Injury Location',
+          key: 'injuryLocation',
+          options: [
+            'Head',
+            'Neck',
+            'Back',
+            'Chest',
+            'Abdomen',
+            'Pelvis',
+            'Upper Extremity',
+            'Lower Extremity',
+            'Other'
+          ]
+        },
+        {
+          type: 'number',
+          label: 'Number of people involved',
+          key: 'peopleCount'
+        }
       ],
     },
     {
@@ -52,7 +84,7 @@ export default function CreateFormScreen() {
       label: 'Witness Statement',
       repeatable: true,
       fields: [
-        { type: 'text', label: 'Name', key: 'name' },
+        { type: 'text', label: 'Name', key: 'name', required: true },
         { type: 'text', label: 'Statement', key: 'statement' },
         {
           type: 'boolean',
@@ -63,7 +95,27 @@ export default function CreateFormScreen() {
           }
         }
       ],
-    }
+    },
+    {
+      key: 'signOff',
+      label: 'Sign Off',
+      fields: [
+        {
+          type: 'text',
+          label: 'Name of person signing off',
+          key: 'nameOfPersonSigningOff',
+          required: true,
+        },
+        {
+          type: 'text',
+          label: 'Job Title',
+          key: 'jobTitle',
+          visibleWhen: {
+            all: [{ key: 'signOff.nameOfPersonSigningOff', notEquals: '' }]
+          }
+        }
+      ],
+    },
   ];
   
 
