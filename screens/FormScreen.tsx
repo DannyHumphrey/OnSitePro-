@@ -59,6 +59,7 @@ export default function FormScreen({ route, navigation }: Props) {
       };
     }
     await saveDraft(draft);
+    setExistingDraft(draft);
   };
 
   const handleSubmitForm = async () => {
@@ -71,11 +72,12 @@ export default function FormScreen({ route, navigation }: Props) {
       const formData = formRef.current?.getFormData() ?? {};
       const timestamp = new Date().toISOString();
       let draft: OutboxForm | null = null;
-      let id = draftId;
+      const currentDraftId = draftId ?? existingDraft?.id;
+      let id = currentDraftId;
 
-      if (draftId) {
+      if (currentDraftId) {
         try {
-          const loaded = await getDraftById(draftId);
+          const loaded = await getDraftById(currentDraftId);
           if (loaded) {
             draft = { ...loaded, status: 'complete' } as OutboxForm;
           }
@@ -125,13 +127,13 @@ export default function FormScreen({ route, navigation }: Props) {
         console.log('Error updating outbox index:', err);
       }
 
-      if (draftId) {
+      if (currentDraftId) {
         // remove draft storage and index
         try {
-          await AsyncStorage.removeItem(`draft:${draftId}`);
+          await AsyncStorage.removeItem(`draft:${currentDraftId}`);
           const indexRaw = await AsyncStorage.getItem('drafts:index');
           const index = indexRaw ? (JSON.parse(indexRaw) as string[]) : [];
-          const newIndex = index.filter((d) => d !== draftId);
+          const newIndex = index.filter((d) => d !== currentDraftId);
           await AsyncStorage.setItem('drafts:index', JSON.stringify(newIndex));
         } catch (err) {
           console.log('Error removing draft from storage:', err);
