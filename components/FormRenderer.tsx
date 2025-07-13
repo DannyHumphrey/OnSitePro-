@@ -1,9 +1,15 @@
+import DateTimePicker, {
+  DateTimePickerEvent,
+} from '@react-native-community/datetimepicker';
+import { Picker } from '@react-native-picker/picker';
+import * as FileSystem from 'expo-file-system';
+import * as ImagePicker from 'expo-image-picker';
 import React, {
   forwardRef,
+  memo,
+  useEffect,
   useImperativeHandle,
   useState,
-  useEffect,
-  memo,
 } from 'react';
 import {
   Button,
@@ -15,13 +21,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { Picker } from '@react-native-picker/picker';
-import * as ImagePicker from 'expo-image-picker';
-import * as FileSystem from 'expo-file-system';
 import { v4 as uuidv4 } from 'uuid';
-import DateTimePicker, {
-  DateTimePickerEvent,
-} from '@react-native-community/datetimepicker';
 import { Collapsible } from './Collapsible';
 
 function getNestedValue(obj: any, path: (string | number)[]) {

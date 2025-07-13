@@ -35,6 +35,14 @@ export default function CreateFormScreen() {
           key: 'fullName',
           required: true,
         },
+        {
+          type: 'text',
+          label: 'Job Title',
+          key: 'jobTitle',
+          visibleWhen: {
+            all: [{ key: 'personInvolved.fullName', notEquals: '' }]
+          }
+        },
         { type: 'date', label: 'Date of Visit', key: 'visitDate' },
         { type: 'photo', label: 'Take a Picture', key: 'photo' },
       ],
@@ -46,9 +54,18 @@ export default function CreateFormScreen() {
       fields: [
         { type: 'text', label: 'Name', key: 'name' },
         { type: 'text', label: 'Statement', key: 'statement' },
+        {
+          type: 'boolean',
+          label: 'Follow-up Required?',
+          key: 'followUpRequired',
+          visibleWhen: {
+            any: [{ key: 'statement', notEquals: '' }, { key: 'name', notEquals: '' }]
+          }
+        }
       ],
-    },
+    }
   ];
+  
 
   const handleStart = () => {
     navigation.navigate('Form', { schema, formType, formName });
