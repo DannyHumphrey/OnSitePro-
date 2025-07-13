@@ -53,8 +53,9 @@ function parsePath(key: string): (string | number)[] {
 function evaluateCondition(
   condition: VisibleWhenCondition,
   state: Record<string, any>,
+  localContext?: Record<string, any>,
 ): boolean {
-  const value = getNestedValue(state, parsePath(condition.key));
+  const value = getNestedValue(localContext ?? state, parsePath(condition.key));
   if ('equals' in condition) {
     return value === condition.equals;
   }
@@ -67,13 +68,14 @@ function evaluateCondition(
 function evaluateVisibleWhen(
   rule: VisibleWhen | undefined,
   state: Record<string, any>,
+  localContext?: Record<string, any>,
 ): boolean {
   if (!rule) return true;
   const allPass = rule.all
-    ? rule.all.every((c) => evaluateCondition(c, state))
+    ? rule.all.every((c) => evaluateCondition(c, state, localContext))
     : true;
   const anyPass = rule.any
-    ? rule.any.some((c) => evaluateCondition(c, state))
+    ? rule.any.some((c) => evaluateCondition(c, state, localContext))
     : true;
   return allPass && anyPass;
 }
@@ -148,6 +150,7 @@ export type FieldRendererProps = {
   field: FormField;
   path: (string | number)[];
   formState: Record<string, any>;
+  localContext?: Record<string, any>;
   activeDateKey: string | null;
   setActiveDateKey: React.Dispatch<React.SetStateAction<string | null>>;
   handleChange: (path: (string | number)[], value: any) => void;
@@ -158,6 +161,7 @@ const FieldRenderer = memo(function FieldRenderer({
   field,
   path,
   formState,
+  localContext,
   activeDateKey,
   setActiveDateKey,
   handleChange,
@@ -165,8 +169,8 @@ const FieldRenderer = memo(function FieldRenderer({
 }: FieldRendererProps) {
   const key = path.join('.');
   const isVisible = React.useMemo(
-    () => evaluateVisibleWhen(field.visibleWhen, formState),
-    [formState, field.visibleWhen],
+    () => evaluateVisibleWhen(field.visibleWhen, formState, localContext),
+    [formState, localContext, field.visibleWhen],
   );
   if (!isVisible) return null;
   const value = getNestedValue(formState, path);
@@ -426,7 +430,7 @@ export const FormRenderer = forwardRef<FormRendererRef, FormRendererProps>(
                 onPress={() => addSection(section)}
               />
             </View>
-            {entries.map((_, idx) => (
+            {entries.map((row, idx) => (
               <Collapsible
                 key={ids[idx] ?? `${section.key}-${idx}`}
                 title={`${section.label} ${idx + 1}`}>
@@ -437,6 +441,7 @@ export const FormRenderer = forwardRef<FormRendererRef, FormRendererProps>(
                       field={f}
                       path={[section.key, idx, f.key]}
                       formState={formState}
+                      localContext={row}
                       activeDateKey={activeDateKey}
                       setActiveDateKey={setActiveDateKey}
                       handleChange={handleChange}
