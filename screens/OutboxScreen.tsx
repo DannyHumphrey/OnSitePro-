@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { FlatList, StyleSheet, View, Button } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 
@@ -10,10 +10,13 @@ import {
   type OutboxForm,
 } from '@/services/outboxService';
 import { useFormCounts } from '@/context/FormCountsContext';
+import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 
 export default function OutboxScreen() {
   const [forms, setForms] = useState<OutboxForm[]>([]);
   const { setCounts } = useFormCounts();
+  const isOnline = useNetworkStatus();
+  const [wasOffline, setWasOffline] = useState(false);
 
   const loadOutbox = useCallback(async () => {
     const data = await getAllOutbox();
@@ -25,6 +28,13 @@ export default function OutboxScreen() {
     await syncOutbox();
     await loadOutbox();
   };
+
+  useEffect(() => {
+    if (isOnline && wasOffline) {
+      syncOutbox().then(loadOutbox);
+    }
+    setWasOffline(!isOnline);
+  }, [isOnline]);
 
   useFocusEffect(
     useCallback(() => {
@@ -45,6 +55,11 @@ export default function OutboxScreen() {
 
   return (
     <ThemedView style={{ flex: 1 }}>
+      {!isOnline && (
+        <ThemedText style={{ color: 'red', textAlign: 'center', marginTop: 8 }}>
+          You are offline.
+        </ThemedText>
+      )}
       <FlatList
         data={forms}
         keyExtractor={(item) => item.id}

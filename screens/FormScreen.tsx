@@ -20,6 +20,7 @@ import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
+import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 import { DraftsStackParamList } from '@/navigation/types';
 import {
   getDraftById,
@@ -35,6 +36,7 @@ export default function FormScreen({ route, navigation }: Props) {
   const { schema, formName, formType = 'demo', draftId, data } = route.params;
   const formRef = useRef<FormRendererRef>(null);
   const colorScheme = useColorScheme() ?? 'light';
+  const isOnline = useNetworkStatus();
   const [existingDraft, setExistingDraft] = useState<DraftForm | null>(null);
   const [initialData, setInitialData] = useState<Record<string, any> | undefined>(data);
   const [menuVisible, setMenuVisible] = useState(false);
@@ -206,6 +208,11 @@ export default function FormScreen({ route, navigation }: Props) {
             </TouchableOpacity>
           </View>
         )}
+        {!isOnline && (
+          <ThemedText style={styles.offlineText}>
+            You are offline. Submissions are disabled.
+          </ThemedText>
+        )}
         <FormRenderer ref={formRef} schema={schema} initialData={initialData} />
         <Modal
           transparent
@@ -267,12 +274,13 @@ export default function FormScreen({ route, navigation }: Props) {
             <Button title="Save as Draft" onPress={handleSaveDraft} />
           </View>
           <View style={styles.buttonWrapper}>
-            <Button
-              title="Submit"
-              onPress={handleSubmitForm}
-              color={Colors[colorScheme].tint}
-            />
-          </View>
+          <Button
+            title="Submit"
+            onPress={handleSubmitForm}
+            color={Colors[colorScheme].tint}
+            disabled={!isOnline}
+          />
+        </View>
         </View>
       </ThemedView>
     </SafeAreaView>
@@ -333,5 +341,10 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     borderRadius: 4,
+  },
+  offlineText: {
+    color: 'red',
+    textAlign: 'center',
+    marginBottom: 8,
   },
 });
