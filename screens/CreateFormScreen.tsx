@@ -9,6 +9,8 @@ import {
   StyleSheet,
   TextInput,
   View,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 
 import type { FormSchema } from '@/components/FormRenderer';
@@ -125,31 +127,41 @@ export default function CreateFormScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
-      <ScrollView contentContainerStyle={styles.container}>
-        <View style={styles.fieldContainer}>
-          <ThemedText>Form Name</ThemedText>
-          <TextInput
-            style={styles.textInput}
-            placeholder="Enter form name"
-            value={formName}
-            onChangeText={setFormName}
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={80}
+      >
+        <ScrollView
+          contentContainerStyle={styles.container}
+          keyboardShouldPersistTaps="handled"
+        >
+          <View style={styles.fieldContainer}>
+            <ThemedText>Form Name</ThemedText>
+            <TextInput
+              style={styles.textInput}
+              placeholder="Enter form name"
+              value={formName}
+              onChangeText={setFormName}
+            />
+          </View>
+          <View style={styles.fieldContainer}>
+            <ThemedText>Form Type</ThemedText>
+            <Picker
+              selectedValue={formType}
+              onValueChange={(val) => setFormType(val)}
+            >
+              <Picker.Item label="Demo Form" value="demo" />
+            </Picker>
+          </View>
+          <Button
+            title="Create"
+            onPress={handleStart}
+            color={Colors[colorScheme].tint}
           />
-        </View>
-        <View style={styles.fieldContainer}>
-          <ThemedText>Form Type</ThemedText>
-          <Picker
-            selectedValue={formType}
-            onValueChange={(val) => setFormType(val)}>
-            <Picker.Item label="Demo Form" value="demo" />
-          </Picker>
-        </View>
-        <Button
-          title="Create"
-          onPress={handleStart}
-          color={Colors[colorScheme].tint}
-        />
-        <Button title="Back" onPress={() => navigation.goBack()} />
-      </ScrollView>
+          <Button title="Back" onPress={() => navigation.goBack()} />
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
