@@ -24,6 +24,7 @@ import {
 } from '@/services/draftService';
 import { deleteLocalPhoto } from '@/services/photoService';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useFormCounts } from '@/context/FormCountsContext';
 
 export default function DraftsScreen() {
   const navigation = useNavigation<
@@ -31,11 +32,13 @@ export default function DraftsScreen() {
   >();
   const colorScheme = useColorScheme() ?? 'light';
   const [drafts, setDrafts] = useState<DraftForm[]>([]);
+  const { setCounts } = useFormCounts();
 
   const loadDrafts = useCallback(async () => {
     const data = await getAllDrafts();
     setDrafts(data);
-  }, []);
+    setCounts((c) => ({ ...c, drafts: data.length }));
+  }, [setCounts]);
 
   useFocusEffect(
     useCallback(() => {

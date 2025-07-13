@@ -9,14 +9,17 @@ import {
   syncOutbox,
   type OutboxForm,
 } from '@/services/outboxService';
+import { useFormCounts } from '@/context/FormCountsContext';
 
 export default function OutboxScreen() {
   const [forms, setForms] = useState<OutboxForm[]>([]);
+  const { setCounts } = useFormCounts();
 
   const loadOutbox = useCallback(async () => {
     const data = await getAllOutbox();
     setForms(data);
-  }, []);
+    setCounts((c) => ({ ...c, outbox: data.length }));
+  }, [setCounts]);
 
   const handleSync = async () => {
     await syncOutbox();
