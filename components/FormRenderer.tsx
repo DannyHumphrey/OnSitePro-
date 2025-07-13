@@ -3,8 +3,8 @@ import DateTimePicker, {
 } from '@react-native-community/datetimepicker';
 import { Picker } from '@react-native-picker/picker';
 import * as FileSystem from 'expo-file-system';
-import * as ImagePicker from 'expo-image-picker';
 import * as ImageManipulator from 'expo-image-manipulator';
+import * as ImagePicker from 'expo-image-picker';
 import React, {
   forwardRef,
   memo,
@@ -16,15 +16,15 @@ import React, {
 import {
   Button,
   Image,
+  LayoutChangeEvent,
+  Modal,
   ScrollView,
   StyleSheet,
   Switch,
   Text,
   TextInput,
-  Modal,
   TouchableOpacity,
   View,
-  LayoutChangeEvent,
 } from 'react-native';
 import { v4 as uuidv4 } from 'uuid';
 import { Collapsible } from './Collapsible';
@@ -572,6 +572,7 @@ export const FormRenderer = forwardRef<FormRendererRef, FormRendererProps>(
       await ImagePicker.requestCameraPermissionsAsync();
       const result = await ImagePicker.launchCameraAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        quality: 0.5,
       });
       if (!result.canceled) {
         const asset = result.assets[0];
