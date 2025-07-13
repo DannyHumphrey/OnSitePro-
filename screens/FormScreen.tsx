@@ -189,6 +189,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     gap: 8,
     padding: 16,
+    marginBottom: 30
   },
   buttonWrapper: {
     flex: 1,
