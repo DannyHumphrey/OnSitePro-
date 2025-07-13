@@ -15,11 +15,11 @@ import type { FormSchema } from '@/components/FormRenderer';
 import { ThemedText } from '@/components/ThemedText';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
-import { RootStackParamList } from '@/navigation/types';
+import { DraftsStackParamList } from '@/navigation/types';
 
 export default function CreateFormScreen() {
   const navigation =
-    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+    useNavigation<NativeStackNavigationProp<DraftsStackParamList>>();
   const colorScheme = useColorScheme() ?? 'light';
   const [formName, setFormName] = useState('');
   const [formType, setFormType] = useState<'demo'>('demo');
@@ -120,7 +120,7 @@ export default function CreateFormScreen() {
   
 
   const handleStart = () => {
-    navigation.navigate('Form', { schema, formType, formName });
+    navigation.navigate('FormScreen', { schema, formType, formName });
   };
 
   return (

@@ -1,7 +1,12 @@
 import { MaterialIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { DarkTheme, DefaultTheme, NavigationContainer, getFocusedRouteNameFromRoute } from '@react-navigation/native';
+import {
+  DarkTheme,
+  DefaultTheme,
+  NavigationContainer,
+  getFocusedRouteNameFromRoute,
+} from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Platform, View } from 'react-native';
@@ -10,7 +15,11 @@ import { HapticTab } from '@/components/HapticTab';
 import TabBarBackground from '@/components/ui/TabBarBackground';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
-import type { RootStackParamList, TabParamList } from '@/navigation/types';
+import type {
+  DraftsStackParamList,
+  MainTabParamList,
+  RootStackParamList,
+} from '@/navigation/types';
 import CreateFormScreen from '@/screens/CreateFormScreen';
 import DraftsScreen from '@/screens/DraftsScreen';
 import FormScreen from '@/screens/FormScreen';
@@ -20,14 +29,33 @@ import OutboxScreen from '@/screens/OutboxScreen';
 import SentScreen from '@/screens/SentScreen';
 import SettingsScreen from '@/screens/SettingsScreen';
 
-const Tab = createBottomTabNavigator<TabParamList>();
-const Stack = createNativeStackNavigator<RootStackParamList>();
+const Tab = createBottomTabNavigator<MainTabParamList>();
+const RootStack = createNativeStackNavigator<RootStackParamList>();
+const DraftsStack = createNativeStackNavigator<DraftsStackParamList>();
 
-function MainTabs() {
+function DraftsTabNavigator() {
+  return (
+    <DraftsStack.Navigator>
+      <DraftsStack.Screen
+        name="DraftsScreen"
+        component={DraftsScreen}
+        options={{ headerShown: false }}
+      />
+      <DraftsStack.Screen
+        name="CreateFormScreen"
+        component={CreateFormScreen}
+        options={{ title: 'Create Form' }}
+      />
+      <DraftsStack.Screen name="FormScreen" component={FormScreen} options={{ title: 'Form' }} />
+    </DraftsStack.Navigator>
+  );
+}
+
+function MainTabNavigator() {
   const colorScheme = useColorScheme();
   return (
     <Tab.Navigator
-      initialRouteName="Drafts"
+      initialRouteName="DraftsTab"
       screenOptions={{
         tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
         headerShown: false,
@@ -41,7 +69,7 @@ function MainTabs() {
         }),
       }}>
       <Tab.Screen
-        name="Inbox"
+        name="InboxTab"
         component={InboxScreen}
         options={{
           title: 'Inbox',
@@ -51,8 +79,8 @@ function MainTabs() {
         }}
       />
       <Tab.Screen
-        name="Drafts"
-        component={DraftsScreen}
+        name="DraftsTab"
+        component={DraftsTabNavigator}
         options={{
           title: 'Drafts',
           tabBarIcon: ({ color }) => (
@@ -61,7 +89,7 @@ function MainTabs() {
         }}
       />
       <Tab.Screen
-        name="Outbox"
+        name="OutboxTab"
         component={OutboxScreen}
         options={{
           title: 'Outbox',
@@ -71,7 +99,7 @@ function MainTabs() {
         }}
       />
       <Tab.Screen
-        name="Sent"
+        name="SentTab"
         component={SentScreen}
         options={{
           title: 'Sent',
@@ -81,7 +109,7 @@ function MainTabs() {
         }}
       />
       <Tab.Screen
-        name="Settings"
+        name="SettingsTab"
         component={SettingsScreen}
         options={{
           title: 'Settings',
@@ -95,15 +123,15 @@ function MainTabs() {
 }
 
 function getTabTitle(route: any) {
-  const routeName = getFocusedRouteNameFromRoute(route) ?? 'Drafts';
+  const routeName = getFocusedRouteNameFromRoute(route) ?? 'DraftsTab';
   switch (routeName) {
-    case 'Inbox':
+    case 'InboxTab':
       return 'Inbox';
-    case 'Outbox':
+    case 'OutboxTab':
       return 'Outbox';
-    case 'Sent':
+    case 'SentTab':
       return 'Sent';
-    case 'Settings':
+    case 'SettingsTab':
       return 'Settings';
     default:
       return 'Drafts';
@@ -135,25 +163,23 @@ export default function App() {
   }
   return (
     <NavigationContainer theme={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack.Navigator
+      <RootStack.Navigator
         screenOptions={{ headerShown: false }}
-        initialRouteName={isLoggedIn ? 'Tabs' : 'Login'}>
-        <Stack.Screen name="Login">
+        initialRouteName={isLoggedIn ? 'MainTabs' : 'Login'}>
+        <RootStack.Screen name="Login">
           {(props) => (
             <LoginScreen {...props} onLogin={() => setIsLoggedIn(true)} />
           )}
-        </Stack.Screen>
-        <Stack.Screen
-          name="Tabs"
-          component={MainTabs}
+        </RootStack.Screen>
+        <RootStack.Screen
+          name="MainTabs"
+          component={MainTabNavigator}
           options={({ route }) => ({
             headerShown: true,
             headerTitle: getTabTitle(route),
           })}
         />
-        <Stack.Screen name="CreateForm" component={CreateFormScreen} />
-        <Stack.Screen name="Form" component={FormScreen} />
-      </Stack.Navigator>
+      </RootStack.Navigator>
     </NavigationContainer>
   );
 }

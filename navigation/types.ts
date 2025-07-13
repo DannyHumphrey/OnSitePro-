@@ -1,23 +1,27 @@
+import type { NavigatorScreenParams } from '@react-navigation/native';
 import type { FormSchema } from '@/components/FormRenderer';
 
-export type TabParamList = {
-  Drafts: undefined;
-  Inbox: undefined;
-  Outbox: undefined;
-  Sent: undefined;
-  Settings: undefined;
-};
-
-export type RootStackParamList = {
-  Login: undefined;
-  Dashboard: undefined;
-  Tabs: { screen?: keyof TabParamList } | undefined;
-  CreateForm: undefined;
-  Form: {
+export type DraftsStackParamList = {
+  DraftsScreen: undefined;
+  CreateFormScreen: undefined;
+  FormScreen: {
     schema: FormSchema;
     formType?: string;
     formName?: string;
     data?: Record<string, any>;
     draftId?: string;
   };
+};
+
+export type MainTabParamList = {
+  DraftsTab: NavigatorScreenParams<DraftsStackParamList>;
+  InboxTab: undefined;
+  OutboxTab: undefined;
+  SentTab: undefined;
+  SettingsTab: undefined;
+};
+
+export type RootStackParamList = {
+  Login: undefined;
+  MainTabs: NavigatorScreenParams<MainTabParamList> | undefined;
 };
