@@ -6,6 +6,8 @@ import React, {
 } from 'react';
 import { Button, Image, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
+import * as FileSystem from 'expo-file-system';
+import { v4 as uuidv4 } from 'uuid';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 
 export type FormField = {
@@ -59,7 +61,16 @@ export const FormRenderer = forwardRef<FormRendererRef, FormRendererProps>(
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
       });
       if (!result.canceled) {
-        handleChange(key, result.assets[0].uri);
+        const asset = result.assets[0];
+        const formsDir = `${FileSystem.documentDirectory}forms/`;
+        try {
+          await FileSystem.makeDirectoryAsync(formsDir, { intermediates: true });
+        } catch {}
+        const extension = asset.uri.split('.').pop() || 'jpg';
+        const filename = `${uuidv4()}.${extension}`;
+        const dest = formsDir + filename;
+        await FileSystem.copyAsync({ from: asset.uri, to: dest });
+        handleChange(key, dest);
       }
     };
 
