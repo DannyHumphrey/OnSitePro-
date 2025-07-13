@@ -4,7 +4,11 @@ import { useFocusEffect } from '@react-navigation/native';
 
 import { ThemedView } from '@/components/ThemedView';
 import { ThemedText } from '@/components/ThemedText';
-import { getAllOutbox, type OutboxForm } from '@/services/outboxService';
+import {
+  getAllOutbox,
+  syncOutbox,
+  type OutboxForm,
+} from '@/services/outboxService';
 
 export default function OutboxScreen() {
   const [forms, setForms] = useState<OutboxForm[]>([]);
@@ -13,6 +17,11 @@ export default function OutboxScreen() {
     const data = await getAllOutbox();
     setForms(data);
   }, []);
+
+  const handleSync = async () => {
+    await syncOutbox();
+    await loadOutbox();
+  };
 
   useFocusEffect(
     useCallback(() => {
@@ -27,7 +36,7 @@ export default function OutboxScreen() {
         {new Date(item.createdAt).toLocaleDateString()}
       </ThemedText>
       <ThemedText style={styles.status}>Ready to sync</ThemedText>
-      <Button title="Sync Now" onPress={() => {}} />
+      <Button title="Sync Now" onPress={handleSync} />
     </View>
   );
 
