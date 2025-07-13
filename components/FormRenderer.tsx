@@ -9,7 +9,8 @@ import React, {
   memo,
   useEffect,
   useImperativeHandle,
-  useState,
+  useRef,
+  useState
 } from 'react';
 import {
   Button,
@@ -389,6 +390,25 @@ export const FormRenderer = forwardRef<FormRendererRef, FormRendererProps>(
       return ids;
     });
     const [activeDateKey, setActiveDateKey] = useState<string | null>(null);
+    const buildExpandedState = () => {
+      const expanded: Record<string, boolean> = {};
+      schema.forEach((section) => {
+        if (section.repeatable) {
+          const length = ((initialData?.[section.key] as any[]) ?? []).length;
+          for (let i = 0; i < length; i++) {
+            expanded[`${section.key}.${i}`] = false;
+          }
+        } else {
+          expanded[section.key] = false;
+        }
+      });
+      return expanded;
+    };
+
+    const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>(buildExpandedState);
+    const [erroredSections, setErroredSections] = useState<Record<string, boolean>>({});
+    const scrollRef = useRef<ScrollView>(null);
+    const sectionPositions = useRef<Record<string, number>>({});
 
     useEffect(() => {
       if (initialData) {
@@ -403,6 +423,8 @@ export const FormRenderer = forwardRef<FormRendererRef, FormRendererProps>(
           });
           return ids;
         });
+        setExpandedSections(buildExpandedState());
+        setErroredSections({});
       }
     }, [initialData, schema]);
 
@@ -458,13 +480,56 @@ export const FormRenderer = forwardRef<FormRendererRef, FormRendererProps>(
         }
       });
       setFormErrors(errors);
-      return { isValid: Object.keys(errors).length === 0, errors };
+
+      const errorKeys = Object.keys(errors);
+      const newExpanded: Record<string, boolean> = {};
+      const newErrored: Record<string, boolean> = {};
+      const erroredOrder: string[] = [];
+      schema.forEach((section) => {
+        if (section.repeatable) {
+          const rows: any[] = formState[section.key] ?? [];
+          rows.forEach((_row, idx) => {
+            const prefix = `${section.key}.${idx}.`;
+            const hasErr = errorKeys.some((k) => k.startsWith(prefix));
+            const secKey = `${section.key}.${idx}`;
+            newExpanded[secKey] = hasErr;
+            if (hasErr) {
+              newErrored[secKey] = true;
+              erroredOrder.push(secKey);
+            }
+          });
+        } else {
+          const prefix = `${section.key}.`;
+          const hasErr = errorKeys.some((k) => k.startsWith(prefix));
+          newExpanded[section.key] = hasErr;
+          if (hasErr) {
+            newErrored[section.key] = true;
+            erroredOrder.push(section.key);
+          }
+        }
+      });
+      setExpandedSections(newExpanded);
+      setErroredSections(newErrored);
+
+      if (erroredOrder.length > 0) {
+        const firstKey = erroredOrder[0];
+        const y = sectionPositions.current[firstKey];
+        if (y !== undefined) {
+          setTimeout(() => {
+            scrollRef.current?.scrollTo({ y, animated: true });
+          }, 50);
+        }
+      }
+
+      return { isValid: errorKeys.length === 0, errors };
     }
 
 
     const addSection = (section: FormSection) => {
+      let newIndex = 0;
       setFormState((prev) => {
         const arr = (prev[section.key] as any[]) ?? [];
+        newIndex = arr.length;
         return {
           ...prev,
           [section.key]: [...arr, createEmptySection(section)],
@@ -474,6 +539,14 @@ export const FormRenderer = forwardRef<FormRendererRef, FormRendererProps>(
         const ids = prev[section.key] ?? [];
         return { ...prev, [section.key]: [...ids, uuidv4()] };
       });
+      setExpandedSections((prev) => ({
+        ...prev,
+        [`${section.key}.${newIndex}`]: true,
+      }));
+      setErroredSections((prev) => ({
+        ...prev,
+        [`${section.key}.${newIndex}`]: false,
+      }));
     };
 
     const removeSection = (key: string, index: number) => {
@@ -484,6 +557,38 @@ export const FormRenderer = forwardRef<FormRendererRef, FormRendererProps>(
       setInstanceIds((prev) => {
         const arr = prev[key] ?? [];
         return { ...prev, [key]: arr.filter((_, i) => i !== index) };
+      });
+      setExpandedSections((prev) => {
+        const updated: Record<string, boolean> = {};
+        Object.keys(prev).forEach((k) => {
+          if (k.startsWith(`${key}.`)) {
+            const idx = parseInt(k.split('.')[1], 10);
+            if (idx < index) {
+              updated[k] = prev[k];
+            } else if (idx > index) {
+              updated[`${key}.${idx - 1}`] = prev[k];
+            }
+          } else {
+            updated[k] = prev[k];
+          }
+        });
+        return updated;
+      });
+      setErroredSections((prev) => {
+        const updated: Record<string, boolean> = {};
+        Object.keys(prev).forEach((k) => {
+          if (k.startsWith(`${key}.`)) {
+            const idx = parseInt(k.split('.')[1], 10);
+            if (idx < index) {
+              updated[k] = prev[k];
+            } else if (idx > index) {
+              updated[`${key}.${idx - 1}`] = prev[k];
+            }
+          } else {
+            updated[k] = prev[k];
+          }
+        });
+        return updated;
       });
     };
 
@@ -503,7 +608,19 @@ export const FormRenderer = forwardRef<FormRendererRef, FormRendererProps>(
             {entries.map((row, idx) => (
               <Collapsible
                 key={ids[idx] ?? `${section.key}-${idx}`}
-                title={`${section.label} ${idx + 1}`}>
+                title={`${section.label} ${idx + 1}`}
+                isOpen={expandedSections[`${section.key}.${idx}`]}
+                onToggle={(open) =>
+                  setExpandedSections((prev) => ({
+                    ...prev,
+                    [`${section.key}.${idx}`]: open,
+                  }))
+                }
+                hasError={erroredSections[`${section.key}.${idx}`]}
+                onLayout={(e) => {
+                  sectionPositions.current[`${section.key}.${idx}`] =
+                    e.nativeEvent.layout.y;
+                }}>
                 <View style={styles.sectionContent}>
                   {section.fields.map((f) => (
                     <FieldRenderer
@@ -531,7 +648,17 @@ export const FormRenderer = forwardRef<FormRendererRef, FormRendererProps>(
       }
 
       return (
-        <Collapsible key={section.key} title={section.label}>
+        <Collapsible
+          key={section.key}
+          title={section.label}
+          isOpen={expandedSections[section.key]}
+          onToggle={(open) =>
+            setExpandedSections((prev) => ({ ...prev, [section.key]: open }))
+          }
+          hasError={erroredSections[section.key]}
+          onLayout={(e) => {
+            sectionPositions.current[section.key] = e.nativeEvent.layout.y;
+          }}>
           {section.fields.map((f) => (
             <FieldRenderer
               key={`${section.key}-${f.key}`}
@@ -550,7 +677,7 @@ export const FormRenderer = forwardRef<FormRendererRef, FormRendererProps>(
     };
 
     return (
-      <ScrollView contentContainerStyle={styles.container}>
+      <ScrollView ref={scrollRef} contentContainerStyle={styles.container}>
         {schema.map((section) => renderSection(section))}
       </ScrollView>
     );
