@@ -4,11 +4,42 @@ import React, {
   useState,
   useEffect,
 } from 'react';
-import { Button, Image, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import {
+  Button,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import * as FileSystem from 'expo-file-system';
 import { v4 as uuidv4 } from 'uuid';
-import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
+import DateTimePicker, {
+  DateTimePickerEvent,
+} from '@react-native-community/datetimepicker';
+import { Collapsible } from './Collapsible';
+
+function getNestedValue(obj: any, path: (string | number)[]) {
+  return path.reduce((acc, key) => (acc ? acc[key] : undefined), obj);
+}
+
+function setNestedValue(obj: any, path: (string | number)[], value: any): any {
+  if (path.length === 0) return value;
+  const [key, ...rest] = path;
+  const clone = Array.isArray(obj) ? [...obj] : { ...obj };
+  if (rest.length === 0) {
+    clone[key as any] = value;
+  } else {
+    clone[key as any] = setNestedValue(
+      obj ? obj[key as any] : undefined,
+      rest,
+      value,
+    );
+  }
+  return clone;
+}
 
 export type FormField = {
   type: 'text' | 'date' | 'photo';
@@ -17,7 +48,14 @@ export type FormField = {
   required?: boolean;
 };
 
-export type FormSchema = FormField[];
+export type FormSection = {
+  key: string;
+  label: string;
+  repeatable?: boolean;
+  fields: FormField[];
+};
+
+export type FormSchema = FormSection[];
 
 export type FormRendererProps = {
   schema: FormSchema;
@@ -30,32 +68,72 @@ export type FormRendererRef = {
 
 export const FormRenderer = forwardRef<FormRendererRef, FormRendererProps>(
   ({ schema, initialData }, ref) => {
-    const initialState: Record<string, any> = {};
-    schema.forEach((field) => {
-      if (initialData && field.key in initialData) {
-        initialState[field.key] = initialData[field.key];
-      } else {
-        initialState[field.key] = field.type === 'photo' ? undefined : '';
-      }
+    function createEmptySection(section: FormSection) {
+      const obj: Record<string, any> = {};
+      section.fields.forEach((f) => {
+        obj[f.key] = f.type === 'photo' ? undefined : '';
+      });
+      return obj;
+    }
+
+    function buildInitialState() {
+      const state: Record<string, any> = {};
+      schema.forEach((section) => {
+        if (section.repeatable) {
+          const arr: Record<string, any>[] = [];
+          const initialArr = (initialData?.[section.key] as any[]) ?? [];
+          initialArr.forEach((entry) => {
+            arr.push({ ...createEmptySection(section), ...entry });
+          });
+          state[section.key] = arr;
+        } else {
+          state[section.key] = {
+            ...createEmptySection(section),
+            ...(initialData?.[section.key] ?? {}),
+          };
+        }
+      });
+      return state;
+    }
+
+    const [formState, setFormState] = useState<Record<string, any>>(buildInitialState);
+    const [instanceIds, setInstanceIds] = useState<Record<string, string[]>>(() => {
+      const ids: Record<string, string[]> = {};
+      schema.forEach((section) => {
+        if (section.repeatable) {
+          const length = ((initialData?.[section.key] as any[]) ?? []).length;
+          ids[section.key] = Array.from({ length }, () => uuidv4());
+        }
+      });
+      return ids;
     });
-    const [formState, setFormState] = useState<Record<string, any>>(initialState);
     const [activeDateKey, setActiveDateKey] = useState<string | null>(null);
 
     useEffect(() => {
       if (initialData) {
-        setFormState((prev) => ({ ...prev, ...initialData }));
+        setFormState(buildInitialState());
+        setInstanceIds(() => {
+          const ids: Record<string, string[]> = {};
+          schema.forEach((section) => {
+            if (section.repeatable) {
+              const length = ((initialData?.[section.key] as any[]) ?? []).length;
+              ids[section.key] = Array.from({ length }, () => uuidv4());
+            }
+          });
+          return ids;
+        });
       }
-    }, [initialData]);
+    }, [initialData, schema]);
 
     useImperativeHandle(ref, () => ({
       getFormData: () => formState,
     }));
 
-    const handleChange = (key: string, value: any) => {
-      setFormState((prev) => ({ ...prev, [key]: value }));
+    const handleChange = (path: (string | number)[], value: any) => {
+      setFormState((prev) => setNestedValue(prev, path, value));
     };
 
-    const handlePickImage = async (key: string) => {
+    const handlePickImage = async (path: (string | number)[]) => {
       await ImagePicker.requestCameraPermissionsAsync();
       const result = await ImagePicker.launchCameraAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
@@ -70,38 +148,38 @@ export const FormRenderer = forwardRef<FormRendererRef, FormRendererProps>(
         const filename = `${uuidv4()}.${extension}`;
         const dest = formsDir + filename;
         await FileSystem.copyAsync({ from: asset.uri, to: dest });
-        handleChange(key, dest);
+        handleChange(path, dest);
       }
     };
 
-    const renderField = (field: FormField) => {
+    const renderField = (field: FormField, path: (string | number)[]) => {
+      const key = path.join('.');
+      const value = getNestedValue(formState, path);
       switch (field.type) {
         case 'text':
           return (
-            <View style={styles.fieldContainer} key={field.key}>
+            <View style={styles.fieldContainer} key={key}>
               <Text style={styles.label}>{field.label}</Text>
               <TextInput
                 style={styles.textInput}
-                value={formState[field.key]}
-                onChangeText={(text) => handleChange(field.key, text)}
+                value={value}
+                onChangeText={(text) => handleChange(path, text)}
               />
             </View>
           );
         case 'date':
           return (
-            <View style={styles.fieldContainer} key={field.key}>
+            <View style={styles.fieldContainer} key={key}>
               <Text style={styles.label}>{field.label}</Text>
               <Button
                 title={
-                  formState[field.key]
-                    ? new Date(formState[field.key]).toLocaleDateString()
-                    : 'Select Date'
+                  value ? new Date(value).toLocaleDateString() : 'Select Date'
                 }
-                onPress={() => setActiveDateKey(field.key)}
+                onPress={() => setActiveDateKey(key)}
               />
-              {activeDateKey === field.key && (
+              {activeDateKey === key && (
                 <DateTimePicker
-                  value={formState[field.key] ? new Date(formState[field.key]) : new Date()}
+                  value={value ? new Date(value) : new Date()}
                   mode="date"
                   display="default"
                   onChange={(
@@ -110,7 +188,7 @@ export const FormRenderer = forwardRef<FormRendererRef, FormRendererProps>(
                   ) => {
                     setActiveDateKey(null);
                     if (date) {
-                      handleChange(field.key, date.toISOString());
+                      handleChange(path, date.toISOString());
                     }
                   }}
                 />
@@ -119,11 +197,11 @@ export const FormRenderer = forwardRef<FormRendererRef, FormRendererProps>(
           );
         case 'photo':
           return (
-            <View style={styles.fieldContainer} key={field.key}>
+            <View style={styles.fieldContainer} key={key}>
               <Text style={styles.label}>{field.label}</Text>
-              <Button title="Take Photo" onPress={() => handlePickImage(field.key)} />
-              {formState[field.key] && (
-                <Image source={{ uri: formState[field.key] }} style={styles.thumbnail} />
+              <Button title="Take Photo" onPress={() => handlePickImage(path)} />
+              {value && (
+                <Image source={{ uri: value }} style={styles.thumbnail} />
               )}
             </View>
           );
@@ -132,7 +210,75 @@ export const FormRenderer = forwardRef<FormRendererRef, FormRendererProps>(
       }
     };
 
-    return <ScrollView contentContainerStyle={styles.container}>{schema.map(renderField)}</ScrollView>;
+    const addSection = (section: FormSection) => {
+      setFormState((prev) => {
+        const arr = (prev[section.key] as any[]) ?? [];
+        return {
+          ...prev,
+          [section.key]: [...arr, createEmptySection(section)],
+        };
+      });
+      setInstanceIds((prev) => {
+        const ids = prev[section.key] ?? [];
+        return { ...prev, [section.key]: [...ids, uuidv4()] };
+      });
+    };
+
+    const removeSection = (key: string, index: number) => {
+      setFormState((prev) => {
+        const arr = (prev[key] as any[]) ?? [];
+        return { ...prev, [key]: arr.filter((_, i) => i !== index) };
+      });
+      setInstanceIds((prev) => {
+        const arr = prev[key] ?? [];
+        return { ...prev, [key]: arr.filter((_, i) => i !== index) };
+      });
+    };
+
+    const renderSection = (section: FormSection) => {
+      if (section.repeatable) {
+        const entries: Record<string, any>[] = formState[section.key] ?? [];
+        const ids = instanceIds[section.key] ?? [];
+        return (
+          <View key={section.key} style={styles.sectionContainer}>
+            <View style={styles.repeatableHeader}>
+              <Text style={styles.sectionLabel}>{section.label}</Text>
+              <Button
+                title={`Add ${section.label}`}
+                onPress={() => addSection(section)}
+              />
+            </View>
+            {entries.map((_, idx) => (
+              <Collapsible
+                key={ids[idx] ?? `${section.key}-${idx}`}
+                title={`${section.label} ${idx + 1}`}>
+                <View style={styles.sectionContent}>
+                  {section.fields.map((f) =>
+                    renderField(f, [section.key, idx, f.key]),
+                  )}
+                  <Button
+                    title="Remove"
+                    onPress={() => removeSection(section.key, idx)}
+                  />
+                </View>
+              </Collapsible>
+            ))}
+          </View>
+        );
+      }
+
+      return (
+        <Collapsible key={section.key} title={section.label}>
+          {section.fields.map((f) => renderField(f, [section.key, f.key]))}
+        </Collapsible>
+      );
+    };
+
+    return (
+      <ScrollView contentContainerStyle={styles.container}>
+        {schema.map((section) => renderSection(section))}
+      </ScrollView>
+    );
   },
 );
 
@@ -157,6 +303,22 @@ const styles = StyleSheet.create({
     marginTop: 8,
     width: 100,
     height: 100,
+  },
+  sectionContainer: {
+    gap: 8,
+  },
+  repeatableHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  sectionLabel: {
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  sectionContent: {
+    gap: 8,
+    marginTop: 8,
   },
 });
 
