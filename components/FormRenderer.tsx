@@ -80,6 +80,33 @@ function evaluateVisibleWhen(
   return allPass && anyPass;
 }
 
+function getVisibleFields(
+  schema: FormSchema,
+  state: Record<string, any>,
+): { field: FormField; path: (string | number)[] }[] {
+  const fields: { field: FormField; path: (string | number)[] }[] = [];
+  schema.forEach((section) => {
+    if (section.repeatable) {
+      const rows: Record<string, any>[] = state[section.key] ?? [];
+      rows.forEach((row, idx) => {
+        section.fields.forEach((f) => {
+          if (evaluateVisibleWhen(f.visibleWhen, state, row)) {
+            fields.push({ field: f, path: [section.key, idx, f.key] });
+          }
+        });
+      });
+    } else {
+      const row: Record<string, any> = state[section.key] ?? {};
+      section.fields.forEach((f) => {
+        if (evaluateVisibleWhen(f.visibleWhen, state, row)) {
+          fields.push({ field: f, path: [section.key, f.key] });
+        }
+      });
+    }
+  });
+  return fields;
+}
+
 export type VisibleWhenCondition =
   | { key: string; equals: any }
   | { key: string; notEquals: any };
@@ -144,6 +171,7 @@ export type FormRendererProps = {
 
 export type FormRendererRef = {
   getFormData: () => Record<string, unknown>;
+  validateForm: () => { isValid: boolean; errors: Record<string, string> };
 };
 
 export type FieldRendererProps = {
@@ -155,6 +183,7 @@ export type FieldRendererProps = {
   setActiveDateKey: React.Dispatch<React.SetStateAction<string | null>>;
   handleChange: (path: (string | number)[], value: any) => void;
   handlePickImage: (path: (string | number)[]) => void;
+  error?: string;
 };
 
 const FieldRenderer = memo(function FieldRenderer({
@@ -166,6 +195,7 @@ const FieldRenderer = memo(function FieldRenderer({
   setActiveDateKey,
   handleChange,
   handlePickImage,
+  error,
 }: FieldRendererProps) {
   const key = path.join('.');
   const isVisible = React.useMemo(
@@ -181,20 +211,24 @@ const FieldRenderer = memo(function FieldRenderer({
         <View style={styles.fieldContainer} key={key}>
           <Text style={styles.label}>{field.label}</Text>
           <TextInput
-            style={styles.textInput}
+            style={[styles.textInput, error && styles.errorInput]}
             value={value}
             onChangeText={(text) => handleChange(path, text)}
           />
+          {error && <Text style={styles.errorText}>{error}</Text>}
         </View>
       );
     case 'boolean':
       return (
-        <View style={styles.fieldContainer} key={key}>
+        <View
+          style={[styles.fieldContainer, error && styles.errorContainer]}
+          key={key}>
           <Text style={styles.label}>{field.label}</Text>
           <Switch
             value={!!value}
             onValueChange={(val) => handleChange(path, val)}
           />
+          {error && <Text style={styles.errorText}>{error}</Text>}
         </View>
       );
     case 'number':
@@ -202,30 +236,34 @@ const FieldRenderer = memo(function FieldRenderer({
         <View style={styles.fieldContainer} key={key}>
           <Text style={styles.label}>{field.label}</Text>
           <TextInput
-            style={styles.textInput}
+            style={[styles.textInput, error && styles.errorInput]}
             keyboardType="numeric"
             value={value !== undefined ? String(value) : ''}
             onChangeText={(text) =>
               handleChange(path, text === '' ? undefined : Number(text))
             }
           />
+          {error && <Text style={styles.errorText}>{error}</Text>}
         </View>
       );
     case 'select':
       return (
         <View style={styles.fieldContainer} key={key}>
           <Text style={styles.label}>{field.label}</Text>
-          <Picker selectedValue={value} onValueChange={(val) => handleChange(path, val)}>
-            <Picker.Item label="" value="" />
-            {field.options.map((opt) => (
-              <Picker.Item key={opt} label={opt} value={opt} />
-            ))}
-          </Picker>
+          <View style={[styles.pickerWrapper, error && styles.errorInput]}>
+            <Picker selectedValue={value} onValueChange={(val) => handleChange(path, val)}>
+              <Picker.Item label="" value="" />
+              {field.options.map((opt) => (
+                <Picker.Item key={opt} label={opt} value={opt} />
+              ))}
+            </Picker>
+          </View>
+          {error && <Text style={styles.errorText}>{error}</Text>}
         </View>
       );
     case 'multiselect':
       return (
-        <View style={styles.fieldContainer} key={key}>
+        <View style={[styles.fieldContainer, error && styles.errorContainer]} key={key}>
           <Text style={styles.label}>{field.label}</Text>
           {field.options.map((opt) => {
             const selected = Array.isArray(value) ? value.includes(opt) : false;
@@ -248,11 +286,12 @@ const FieldRenderer = memo(function FieldRenderer({
               </View>
             );
           })}
+          {error && <Text style={styles.errorText}>{error}</Text>}
         </View>
       );
     case 'date':
       return (
-        <View style={styles.fieldContainer} key={key}>
+        <View style={[styles.fieldContainer, error && styles.errorContainer]} key={key}>
           <Text style={styles.label}>{field.label}</Text>
           <Button
             title={value ? new Date(value).toLocaleDateString() : 'Select Date'}
@@ -274,14 +313,16 @@ const FieldRenderer = memo(function FieldRenderer({
               }}
             />
           )}
+          {error && <Text style={styles.errorText}>{error}</Text>}
         </View>
       );
     case 'photo':
       return (
-        <View style={styles.fieldContainer} key={key}>
+        <View style={[styles.fieldContainer, error && styles.errorContainer]} key={key}>
           <Text style={styles.label}>{field.label}</Text>
           <Button title="Take Photo" onPress={() => handlePickImage(path)} />
           {value && <Image source={{ uri: value }} style={styles.thumbnail} />}
+          {error && <Text style={styles.errorText}>{error}</Text>}
         </View>
       );
     default:
@@ -336,6 +377,7 @@ export const FormRenderer = forwardRef<FormRendererRef, FormRendererProps>(
     }
 
     const [formState, setFormState] = useState<Record<string, any>>(buildInitialState);
+    const [formErrors, setFormErrors] = useState<Record<string, string>>({});
     const [instanceIds, setInstanceIds] = useState<Record<string, string[]>>(() => {
       const ids: Record<string, string[]> = {};
       schema.forEach((section) => {
@@ -366,10 +408,18 @@ export const FormRenderer = forwardRef<FormRendererRef, FormRendererProps>(
 
     useImperativeHandle(ref, () => ({
       getFormData: () => formState,
+      validateForm: validateForm,
     }));
 
     const handleChange = (path: (string | number)[], value: any) => {
       setFormState((prev) => setNestedValue(prev, path, value));
+      setFormErrors((prev) => {
+        const key = path.join('.');
+        if (!prev[key]) return prev;
+        const updated = { ...prev };
+        delete updated[key];
+        return updated;
+      });
     };
 
     const handlePickImage = async (path: (string | number)[]) => {
@@ -390,6 +440,26 @@ export const FormRenderer = forwardRef<FormRendererRef, FormRendererProps>(
         handleChange(path, dest);
       }
     };
+
+    function validateForm() {
+      const fields = getVisibleFields(schema, formState);
+      const errors: Record<string, string> = {};
+      fields.forEach(({ field, path }) => {
+        if (field.required) {
+          const val = getNestedValue(formState, path);
+          const empty =
+            val === undefined ||
+            val === null ||
+            val === '' ||
+            (Array.isArray(val) && val.length === 0);
+          if (empty) {
+            errors[path.join('.')] = 'Required';
+          }
+        }
+      });
+      setFormErrors(errors);
+      return { isValid: Object.keys(errors).length === 0, errors };
+    }
 
 
     const addSection = (section: FormSection) => {
@@ -446,6 +516,7 @@ export const FormRenderer = forwardRef<FormRendererRef, FormRendererProps>(
                       setActiveDateKey={setActiveDateKey}
                       handleChange={handleChange}
                       handlePickImage={handlePickImage}
+                      error={formErrors[`${section.key}.${idx}.${f.key}`]}
                     />
                   ))}
                   <Button
@@ -471,6 +542,7 @@ export const FormRenderer = forwardRef<FormRendererRef, FormRendererProps>(
               setActiveDateKey={setActiveDateKey}
               handleChange={handleChange}
               handlePickImage={handlePickImage}
+              error={formErrors[`${section.key}.${f.key}`]}
             />
           ))}
         </Collapsible>
@@ -501,6 +573,23 @@ const styles = StyleSheet.create({
     borderColor: '#ccc',
     padding: 8,
     borderRadius: 4,
+  },
+  pickerWrapper: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 4,
+  },
+  errorInput: {
+    borderColor: 'red',
+  },
+  errorText: {
+    color: 'red',
+  },
+  errorContainer: {
+    borderWidth: 1,
+    borderColor: 'red',
+    borderRadius: 4,
+    padding: 4,
   },
   thumbnail: {
     marginTop: 8,
