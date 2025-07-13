@@ -1,5 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useState } from 'react';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Constants from 'expo-constants';
 import {
   Alert,
@@ -16,6 +18,7 @@ import {
 
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
+import { RootStackParamList } from '@/navigation/types';
 
 type Props = { onLogin: () => void };
 
@@ -27,6 +30,8 @@ export default function LoginScreen({ onLogin }: Props) {
 
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   const handleLogin = async () => {
     try {
@@ -53,6 +58,7 @@ export default function LoginScreen({ onLogin }: Props) {
         await AsyncStorage.setItem('auth:token', data.token);
         await AsyncStorage.setItem('auth:isLoggedIn', 'true');
         onLogin();
+        navigation.replace('Tabs');
       } else {
         Alert.alert('Invalid Login', 'Username or password is incorrect.');
       }
