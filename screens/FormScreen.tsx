@@ -6,12 +6,12 @@ import {
   Button,
   Image,
   Modal,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   TouchableOpacity,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { v4 as uuidv4 } from 'uuid';
 
 import FormRenderer, { type FormRendererRef } from '@/components/FormRenderer';
@@ -236,7 +236,7 @@ export default function FormScreen({ route, navigation }: Props) {
           animationType="fade"
           visible={menuVisible}
           onRequestClose={() => setMenuVisible(false)}>
-          <View style={styles.modalOverlay}>
+          <SafeAreaView style={styles.modalOverlay}>
             <View style={[styles.drawer, { backgroundColor: Colors[colorScheme].background }]}>
               <View style={styles.tabRow}>
                 <TouchableOpacity
@@ -278,7 +278,7 @@ export default function FormScreen({ route, navigation }: Props) {
                 </ScrollView>
               )}
             </View>
-          </View>
+          </SafeAreaView>
         </Modal>
         <View style={styles.buttonRow}>
           <View style={styles.buttonWrapper}>
