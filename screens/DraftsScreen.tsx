@@ -15,7 +15,6 @@ import {
 
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
-import { StatusBadge } from '@/components/StatusBadge';
 import { Colors } from '@/constants/Colors';
 import { useFormCounts } from '@/context/FormCountsContext';
 import { useColorScheme } from '@/hooks/useColorScheme';
@@ -146,7 +145,6 @@ export default function DraftsScreen() {
       <ThemedText style={styles.dateText}>
         {new Date(item.createdAt).toLocaleDateString()}
       </ThemedText>
-      <StatusBadge label="Draft" icon="📝" color="#6c757d" />
       <Button title="Resume" onPress={() => handleResume(item)} />
     </View>
   );

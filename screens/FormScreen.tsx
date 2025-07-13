@@ -233,7 +233,7 @@ export default function FormScreen({ route, navigation }: Props) {
         <FormRenderer ref={formRef} schema={schema} initialData={initialData} readOnly={readOnly}/>
         <Modal
           transparent
-          animationType="slide"
+          animationType="fade"
           visible={menuVisible}
           onRequestClose={() => setMenuVisible(false)}>
           <View style={styles.modalOverlay}>
