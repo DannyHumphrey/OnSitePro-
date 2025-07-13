@@ -218,17 +218,16 @@ const FieldRenderer = memo(function FieldRenderer({
     () => evaluateVisibleWhen(field.visibleWhen, formState, localContext),
     [formState, localContext, field.visibleWhen],
   );
-  if (!isVisible) return null;
   const value = getNestedValue(formState, path);
-  const [preview, setPreview] = useState<string | null>(null);
-
   const onLayout = (e: LayoutChangeEvent) => {
     registerFieldPosition(key, e.nativeEvent.layout.y);
   };
 
+  let content: React.ReactElement | null = null;
+
   switch (field.type) {
     case 'text':
-      return (
+      content = (
         <View style={styles.fieldContainer} key={key} onLayout={onLayout}>
           <Text style={styles.label}>{field.label}</Text>
           <TextInput
@@ -240,8 +239,9 @@ const FieldRenderer = memo(function FieldRenderer({
           {error && <Text style={styles.errorText}>{error}</Text>}
         </View>
       );
+      break;
     case 'boolean':
-      return (
+      content = (
         <View
           style={[styles.fieldContainer, error && styles.errorContainer]}
           key={key}
@@ -255,8 +255,9 @@ const FieldRenderer = memo(function FieldRenderer({
           {error && <Text style={styles.errorText}>{error}</Text>}
         </View>
       );
+      break;
     case 'number':
-      return (
+      content = (
         <View style={styles.fieldContainer} key={key} onLayout={onLayout}>
           <Text style={styles.label}>{field.label}</Text>
           <TextInput
@@ -271,8 +272,9 @@ const FieldRenderer = memo(function FieldRenderer({
           {error && <Text style={styles.errorText}>{error}</Text>}
         </View>
       );
+      break;
     case 'select':
-      return (
+      content = (
         <View style={styles.fieldContainer} key={key} onLayout={onLayout}>
           <Text style={styles.label}>{field.label}</Text>
           <View style={[styles.pickerWrapper, error && styles.errorInput]}>
@@ -290,8 +292,9 @@ const FieldRenderer = memo(function FieldRenderer({
           {error && <Text style={styles.errorText}>{error}</Text>}
         </View>
       );
+      break;
     case 'multiselect':
-      return (
+      content = (
         <View
           style={[styles.fieldContainer, error && styles.errorContainer]}
           key={key}
@@ -326,8 +329,9 @@ const FieldRenderer = memo(function FieldRenderer({
           {error && <Text style={styles.errorText}>{error}</Text>}
         </View>
       );
+      break;
     case 'date':
-      return (
+      content = (
         <View style={[styles.fieldContainer, error && styles.errorContainer]} key={key} onLayout={onLayout}>
           <Text style={styles.label}>{field.label}</Text>
           <Button
@@ -354,6 +358,7 @@ const FieldRenderer = memo(function FieldRenderer({
           {error && <Text style={styles.errorText}>{error}</Text>}
         </View>
       );
+      break;
     case 'photo':
       const photos: string[] = Array.isArray(value) ? value : [];
       const [preview, setPreview] = useState<string | null>(null);
@@ -364,7 +369,7 @@ const FieldRenderer = memo(function FieldRenderer({
         handleChange(path, updated);
       };
 
-      return (
+      content = (
         <View style={[styles.fieldContainer, error && styles.errorContainer]} key={key} onLayout={onLayout}>
           <Text style={styles.label}>{field.label}</Text>
           {!readOnly && (
@@ -392,6 +397,7 @@ const FieldRenderer = memo(function FieldRenderer({
           )}
         </View>
       );
+      break;
     case 'signature':
       const sigUri: string | undefined = value;
       const [sigPreview, setSigPreview] = useState<string | null>(null);
@@ -414,7 +420,7 @@ const FieldRenderer = memo(function FieldRenderer({
         setShowPad(false);
       };
 
-      return (
+      content = (
         <View
           style={[styles.fieldContainer, error && styles.errorContainer]}
           key={key}
@@ -467,9 +473,12 @@ const FieldRenderer = memo(function FieldRenderer({
           )}
         </View>
       );
+      break;
     default:
-      return null;
+      content = null;
   }
+
+  return isVisible ? content : null;
 });
 
 export const FormRenderer = forwardRef<FormRendererRef, FormRendererProps>(
