@@ -12,6 +12,7 @@ export const FormRenderer = forwardRef<FormRendererRef, FormRendererProps>(
   ({ schema, initialData, readOnly }, ref) => {
     const {
       formState,
+      setFormState,
       formErrors,
       setFormErrors,
       instanceIds,
