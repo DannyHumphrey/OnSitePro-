@@ -6,7 +6,7 @@ import { FlatList, StyleSheet, TouchableOpacity } from 'react-native';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { StatusBadge } from '@/components/StatusBadge';
-import type { FormSchema } from '@/components/FormRenderer';
+import type { FormSchema } from '@/components/formRenderer/fields/types';
 import { useFormCounts } from '@/context/FormCountsContext';
 
 export type SentForm = {
