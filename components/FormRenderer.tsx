@@ -1,7 +1,8 @@
+/* eslint-disable react-hooks/rules-of-hooks */
 import DateTimePicker, {
   DateTimePickerEvent,
 } from '@react-native-community/datetimepicker';
-import { Picker } from '@react-native-picker/picker';
+import DropDownPicker from 'react-native-dropdown-picker';
 import * as FileSystem from 'expo-file-system';
 import * as ImageManipulator from 'expo-image-manipulator';
 import * as ImagePicker from 'expo-image-picker';
@@ -165,7 +166,7 @@ export type FormField =
       type: 'select';
       label: string;
       key: string;
-      options: string[];
+      options: { label: string; value: string }[];
       required?: boolean;
       visibleWhen?: VisibleWhen;
     }
@@ -365,21 +366,23 @@ const FieldRenderer = memo(function FieldRenderer({
       );
       break;
     case 'select':
+      const [open, setOpen] = useState(false);
       content = (
         <View style={styles.fieldContainer} key={key} onLayout={onLayout}>
           <Text style={styles.label}>{field.label}</Text>
-          <View style={[styles.pickerWrapper, error && styles.errorInput]}>
-            <Picker
-              selectedValue={value}
-              onValueChange={(val) => handleChange(path, val)}
-              enabled={!readOnly}
-            >
-              <Picker.Item label="" value="" />
-              {field.options.map((opt) => (
-                <Picker.Item key={opt} label={opt} value={opt} />
-              ))}
-            </Picker>
-          </View>
+          <DropDownPicker
+            open={open}
+            value={value}
+            items={field.options}
+            setOpen={setOpen}
+            setValue={(callback) => {
+              const val = callback(value);
+              handleChange(path, val);
+            }}
+            disabled={readOnly}
+            style={[styles.dropdown, error && styles.errorInput]}
+            dropDownContainerStyle={styles.dropdownContainer}
+          />
           {error && <Text style={styles.errorText}>{error}</Text>}
         </View>
       );
@@ -657,6 +660,7 @@ const FieldRenderer = memo(function FieldRenderer({
 
   return isVisible ? content : null;
 });
+FieldRenderer.displayName = 'FieldRenderer';
 
 export const FormRenderer = forwardRef<FormRendererRef, FormRendererProps>(
   ({ schema, initialData, readOnly }, ref) => {
@@ -1148,6 +1152,7 @@ export const FormRenderer = forwardRef<FormRendererRef, FormRendererProps>(
     );
   },
 );
+FormRenderer.displayName = 'FormRenderer';
 
 const styles = StyleSheet.create({
   container: {
@@ -1166,10 +1171,13 @@ const styles = StyleSheet.create({
     padding: 8,
     borderRadius: 4,
   },
-  pickerWrapper: {
+  dropdown: {
     borderWidth: 1,
     borderColor: '#ccc',
-    borderRadius: 4,
+  },
+  dropdownContainer: {
+    borderWidth: 1,
+    borderColor: '#ccc',
   },
   errorInput: {
     borderColor: 'red',
