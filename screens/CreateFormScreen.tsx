@@ -13,7 +13,7 @@ import {
   Platform,
 } from 'react-native';
 
-import type { FormSchema } from '@/components/FormRenderer';
+import type { FormSchema } from '@/components/formRenderer/fields/types';
 import { ThemedText } from '@/components/ThemedText';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';

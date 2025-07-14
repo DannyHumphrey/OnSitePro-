@@ -16,7 +16,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { v4 as uuidv4 } from 'uuid';
 
-import FormRenderer, { type FormRendererRef } from '@/components/FormRenderer';
+import FormRenderer, { type FormRendererRef } from '@/components/formRenderer';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { IconSymbol } from '@/components/ui/IconSymbol';

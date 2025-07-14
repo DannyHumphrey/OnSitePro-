@@ -1,5 +1,5 @@
 import type { NavigatorScreenParams } from '@react-navigation/native';
-import type { FormSchema } from '@/components/FormRenderer';
+import type { FormSchema } from '@/components/formRenderer/fields/types';
 
 export type DraftsStackParamList = {
   DraftsScreen: undefined;

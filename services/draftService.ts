@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import type { FormSchema } from '@/components/FormRenderer';
+import type { FormSchema } from '@/components/formRenderer/fields/types';
 
 export type DraftForm = {
   id: string;
