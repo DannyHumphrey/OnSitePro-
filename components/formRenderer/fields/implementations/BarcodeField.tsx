@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, Button, Modal, LayoutChangeEvent } from 'react-native';
-import { BarCodeScanner } from 'expo-barcode-scanner';
+import { CameraView, requestCameraPermissionsAsync } from 'expo-camera';
 import { FormField } from '../types';
 import { styles } from '../../styles';
 
@@ -16,7 +16,7 @@ type Props = {
 export function BarcodeField({ field, value, onChange, error, readOnly, onLayout }: Props) {
   const [scanVisible, setScanVisible] = useState(false);
   const startScan = async () => {
-    const { status } = await BarCodeScanner.requestPermissionsAsync();
+    const { status } = await requestCameraPermissionsAsync();
     if (status === 'granted') {
       setScanVisible(true);
     }
@@ -35,8 +35,8 @@ export function BarcodeField({ field, value, onChange, error, readOnly, onLayout
       </View>
       {scanVisible && (
         <Modal transparent onRequestClose={() => setScanVisible(false)}>
-          <BarCodeScanner
-            onBarCodeScanned={({ data }) => {
+          <CameraView
+            onBarcodeScanned={({ data }) => {
               setScanVisible(false);
               onChange(data);
             }}
