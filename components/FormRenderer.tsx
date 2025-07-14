@@ -5,6 +5,7 @@ import { Picker } from '@react-native-picker/picker';
 import * as FileSystem from 'expo-file-system';
 import * as ImageManipulator from 'expo-image-manipulator';
 import * as ImagePicker from 'expo-image-picker';
+import { BarCodeScanner } from 'expo-barcode-scanner';
 import Signature from 'react-native-signature-canvas';
 import React, {
   forwardRef,
@@ -124,7 +125,15 @@ export type VisibleWhen = {
 
 export type FormField =
   | {
-      type: 'text' | 'date' | 'photo' | 'signature';
+      type:
+        | 'text'
+        | 'date'
+        | 'photo'
+        | 'signature'
+        | 'time'
+        | 'datetime'
+        | 'barcode'
+        | 'imageSelect';
       label: string;
       key: string;
       required?: boolean;
@@ -138,9 +147,17 @@ export type FormField =
       visibleWhen?: VisibleWhen;
     }
   | {
-      type: 'number';
+      type: 'number' | 'decimal';
       label: string;
       key: string;
+      required?: boolean;
+      visibleWhen?: VisibleWhen;
+    }
+  | {
+      type: 'currency';
+      label: string;
+      key: string;
+      currencySymbol?: string;
       required?: boolean;
       visibleWhen?: VisibleWhen;
     }
@@ -195,6 +212,7 @@ export type FieldRendererProps = {
   setActiveDateKey: React.Dispatch<React.SetStateAction<string | null>>;
   handleChange: (path: (string | number)[], value: any) => void;
   handlePickImage: (path: (string | number)[]) => void;
+  handleSelectImage: (path: (string | number)[]) => void;
   error?: string;
   registerFieldPosition: (key: string, y: number) => void;
   readOnly?: boolean;
@@ -209,6 +227,7 @@ const FieldRenderer = memo(function FieldRenderer({
   setActiveDateKey,
   handleChange,
   handlePickImage,
+  handleSelectImage,
   error,
   registerFieldPosition,
   readOnly,
@@ -269,6 +288,78 @@ const FieldRenderer = memo(function FieldRenderer({
               handleChange(path, text === '' ? undefined : Number(text))
             }
           />
+          {error && <Text style={styles.errorText}>{error}</Text>}
+        </View>
+      );
+      break;
+    case 'decimal':
+      content = (
+        <View style={styles.fieldContainer} key={key} onLayout={onLayout}>
+          <Text style={styles.label}>{field.label}</Text>
+          <TextInput
+            style={[styles.textInput, error && styles.errorInput]}
+            keyboardType="decimal-pad"
+            value={value !== undefined ? String(value) : ''}
+            editable={!readOnly}
+            onChangeText={(text) =>
+              handleChange(path, text === '' ? undefined : parseFloat(text))
+            }
+          />
+          {error && <Text style={styles.errorText}>{error}</Text>}
+        </View>
+      );
+      break;
+    case 'currency':
+      content = (
+        <View style={styles.fieldContainer} key={key} onLayout={onLayout}>
+          <Text style={styles.label}>{field.label}</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <Text>{field.currencySymbol ?? '£'}</Text>
+            <TextInput
+              style={[styles.textInput, { flex: 1 }, error && styles.errorInput]}
+              keyboardType="decimal-pad"
+              value={value !== undefined ? String(value) : ''}
+              editable={!readOnly}
+              onChangeText={(text) =>
+                handleChange(path, text === '' ? undefined : parseFloat(text))
+              }
+            />
+          </View>
+          {error && <Text style={styles.errorText}>{error}</Text>}
+        </View>
+      );
+      break;
+    case 'barcode':
+      const [scanVisible, setScanVisible] = useState(false);
+      const startScan = async () => {
+        const { status } = await BarCodeScanner.requestPermissionsAsync();
+        if (status === 'granted') {
+          setScanVisible(true);
+        }
+      };
+      content = (
+        <View style={styles.fieldContainer} key={key} onLayout={onLayout}>
+          <Text style={styles.label}>{field.label}</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <TextInput
+              style={[styles.textInput, { flex: 1 }, error && styles.errorInput]}
+              value={value}
+              editable={!readOnly}
+              onChangeText={(text) => handleChange(path, text)}
+            />
+            {!readOnly && <Button title="Scan" onPress={startScan} />}
+          </View>
+          {scanVisible && (
+            <Modal transparent onRequestClose={() => setScanVisible(false)}>
+              <BarCodeScanner
+                onBarCodeScanned={({ data }) => {
+                  setScanVisible(false);
+                  handleChange(path, data);
+                }}
+                style={{ flex: 1 }}
+              />
+            </Modal>
+          )}
           {error && <Text style={styles.errorText}>{error}</Text>}
         </View>
       );
@@ -359,6 +450,66 @@ const FieldRenderer = memo(function FieldRenderer({
         </View>
       );
       break;
+    case 'time':
+      content = (
+        <View style={[styles.fieldContainer, error && styles.errorContainer]} key={key} onLayout={onLayout}>
+          <Text style={styles.label}>{field.label}</Text>
+          <Button
+            title={value ? value : 'Select Time'}
+            onPress={() => setActiveDateKey(key)}
+            disabled={readOnly}
+          />
+          {activeDateKey === key && (
+            <DateTimePicker
+              value={value ? new Date(`1970-01-01T${value}`) : new Date()}
+              mode="time"
+              display="default"
+              onChange={(
+                _event: DateTimePickerEvent,
+                date?: Date,
+              ) => {
+                setActiveDateKey(null);
+                if (date) {
+                  const h = date.getHours().toString().padStart(2, '0');
+                  const m = date.getMinutes().toString().padStart(2, '0');
+                  handleChange(path, `${h}:${m}`);
+                }
+              }}
+            />
+          )}
+          {error && <Text style={styles.errorText}>{error}</Text>}
+        </View>
+      );
+      break;
+    case 'datetime':
+      content = (
+        <View style={[styles.fieldContainer, error && styles.errorContainer]} key={key} onLayout={onLayout}>
+          <Text style={styles.label}>{field.label}</Text>
+          <Button
+            title={value ? new Date(value).toLocaleString() : 'Select Date & Time'}
+            onPress={() => setActiveDateKey(key)}
+            disabled={readOnly}
+          />
+          {activeDateKey === key && (
+            <DateTimePicker
+              value={value ? new Date(value) : new Date()}
+              mode="datetime"
+              display="default"
+              onChange={(
+                _event: DateTimePickerEvent,
+                date?: Date,
+              ) => {
+                setActiveDateKey(null);
+                if (date) {
+                  handleChange(path, date.toISOString());
+                }
+              }}
+            />
+          )}
+          {error && <Text style={styles.errorText}>{error}</Text>}
+        </View>
+      );
+      break;
     case 'photo':
       const photos: string[] = Array.isArray(value) ? value : [];
       const [preview, setPreview] = useState<string | null>(null);
@@ -392,6 +543,32 @@ const FieldRenderer = memo(function FieldRenderer({
             <Modal transparent visible onRequestClose={() => setPreview(null)}>
               <TouchableOpacity style={styles.previewContainer} onPress={() => setPreview(null)}>
                 <Image source={{ uri: preview }} style={styles.previewImage} resizeMode="contain" />
+              </TouchableOpacity>
+            </Modal>
+          )}
+        </View>
+      );
+      break;
+    case 'imageSelect':
+      const imgUri: string | undefined = value;
+      const [imgPreview, setImgPreview] = useState<string | null>(null);
+
+      content = (
+        <View style={[styles.fieldContainer, error && styles.errorContainer]} key={key} onLayout={onLayout}>
+          <Text style={styles.label}>{field.label}</Text>
+          {!readOnly && (
+            <Button title="Select Image" onPress={() => handleSelectImage(path)} />
+          )}
+          {imgUri ? (
+            <TouchableOpacity onPress={() => setImgPreview(imgUri)}>
+              <Image source={{ uri: imgUri }} style={styles.thumbnail} />
+            </TouchableOpacity>
+          ) : null}
+          {error && <Text style={styles.errorText}>{error}</Text>}
+          {imgPreview && (
+            <Modal transparent visible onRequestClose={() => setImgPreview(null)}>
+              <TouchableOpacity style={styles.previewContainer} onPress={() => setImgPreview(null)}>
+                <Image source={{ uri: imgPreview }} style={styles.previewImage} resizeMode="contain" />
               </TouchableOpacity>
             </Modal>
           )}
@@ -497,10 +674,18 @@ export const FormRenderer = forwardRef<FormRendererRef, FormRendererProps>(
             obj[f.key] = false;
             break;
           case 'number':
+          case 'decimal':
+          case 'currency':
             obj[f.key] = undefined;
             break;
           case 'multiselect':
             obj[f.key] = [];
+            break;
+          case 'time':
+          case 'datetime':
+          case 'barcode':
+          case 'imageSelect':
+            obj[f.key] = '';
             break;
           default:
             obj[f.key] = '';
@@ -639,7 +824,7 @@ export const FormRenderer = forwardRef<FormRendererRef, FormRendererProps>(
                 photos.push({ key: `${path.join('.')}.${idx}`, uri });
               });
             }
-          } else if (field.type === 'signature') {
+          } else if (field.type === 'signature' || field.type === 'imageSelect') {
             const uri = getNestedValue(formState, path);
             if (typeof uri === 'string' && uri) {
               photos.push({ key: path.join('.'), uri });
@@ -694,6 +879,39 @@ export const FormRenderer = forwardRef<FormRendererRef, FormRendererProps>(
         const current = getNestedValue(formState, path);
         const arr = Array.isArray(current) ? [...current, dest] : [dest];
         handleChange(path, arr);
+      }
+    };
+
+    const handleSelectImage = async (path: (string | number)[]) => {
+      await ImagePicker.requestMediaLibraryPermissionsAsync();
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        quality: 0.5,
+      });
+      if (!result.canceled) {
+        const asset = result.assets[0];
+        let width = asset.width ?? 0;
+        let height = asset.height ?? 0;
+        const maxDim = Math.max(width, height);
+        if (maxDim > 1000) {
+          const scale = 1000 / maxDim;
+          width = Math.round(width * scale);
+          height = Math.round(height * scale);
+        }
+        const manipulated = await ImageManipulator.manipulateAsync(
+          asset.uri,
+          [{ resize: { width, height } }],
+          { compress: 0.8, format: ImageManipulator.SaveFormat.JPEG },
+        );
+        const formsDir = `${FileSystem.documentDirectory}forms/`;
+        try {
+          await FileSystem.makeDirectoryAsync(formsDir, { intermediates: true });
+        } catch {}
+        const extension = manipulated.uri.split('.').pop() || 'jpg';
+        const filename = `${uuidv4()}.${extension}`;
+        const dest = formsDir + filename;
+        await FileSystem.copyAsync({ from: manipulated.uri, to: dest });
+        handleChange(path, dest);
       }
     };
 
@@ -867,6 +1085,7 @@ export const FormRenderer = forwardRef<FormRendererRef, FormRendererProps>(
                       setActiveDateKey={setActiveDateKey}
                       handleChange={handleChange}
                       handlePickImage={handlePickImage}
+                      handleSelectImage={handleSelectImage}
                       error={formErrors[`${section.key}.${idx}.${f.key}`]}
                       registerFieldPosition={(k, y) => {
                         fieldPositions.current[k] = y;
@@ -907,6 +1126,7 @@ export const FormRenderer = forwardRef<FormRendererRef, FormRendererProps>(
               setActiveDateKey={setActiveDateKey}
               handleChange={handleChange}
               handlePickImage={handlePickImage}
+              handleSelectImage={handleSelectImage}
               error={formErrors[`${section.key}.${f.key}`]}
               registerFieldPosition={(k, y) => {
                 fieldPositions.current[k] = y;
