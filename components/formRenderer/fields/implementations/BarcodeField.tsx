@@ -1,8 +1,8 @@
+import { Camera, CameraView } from 'expo-camera';
 import React, { useState } from 'react';
-import { View, Text, TextInput, Button, Modal, LayoutChangeEvent } from 'react-native';
-import { CameraView, requestCameraPermissionsAsync } from 'expo-camera';
-import { FormField } from '../types';
+import { Button, LayoutChangeEvent, Modal, Text, TextInput, View } from 'react-native';
 import { styles } from '../../styles';
+import { FormField } from '../types';
 
 type Props = {
   field: Extract<FormField, { type: 'barcode' }>;
@@ -16,7 +16,7 @@ type Props = {
 export function BarcodeField({ field, value, onChange, error, readOnly, onLayout }: Props) {
   const [scanVisible, setScanVisible] = useState(false);
   const startScan = async () => {
-    const { status } = await requestCameraPermissionsAsync();
+    const { status } = await Camera.requestCameraPermissionsAsync();
     if (status === 'granted') {
       setScanVisible(true);
     }
@@ -39,6 +39,9 @@ export function BarcodeField({ field, value, onChange, error, readOnly, onLayout
             onBarcodeScanned={({ data }) => {
               setScanVisible(false);
               onChange(data);
+            }}
+            barcodeScannerSettings={{
+              barcodeTypes: ["qr", "pdf417"],
             }}
             style={{ flex: 1 }}
           />

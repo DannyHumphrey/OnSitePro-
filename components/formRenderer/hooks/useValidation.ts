@@ -1,7 +1,7 @@
 import { RefObject } from 'react';
 import { ScrollView } from 'react-native';
 import { FormSchema } from '../fields/types';
-import { getVisibleFields, getNestedValue } from '../utils/formUtils';
+import { getNestedValue, getVisibleFields } from '../utils/formUtils';
 
 export function validateForm(
   schema: FormSchema,
@@ -9,7 +9,7 @@ export function validateForm(
   setFormErrors: (v: Record<string, string>) => void,
   setExpandedSections: (v: Record<string, boolean>) => void,
   setErroredSections: (v: Record<string, boolean>) => void,
-  scrollRef: RefObject<ScrollView>,
+  scrollRef: RefObject<ScrollView | null>,
   sectionPositions: RefObject<Record<string, number>>,
 ) {
   const fields = getVisibleFields(schema, formState);
