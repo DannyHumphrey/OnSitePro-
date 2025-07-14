@@ -1,4 +1,4 @@
-import { Picker } from '@react-native-picker/picker';
+import DropDownPicker from 'react-native-dropdown-picker';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useState } from 'react';
@@ -25,6 +25,7 @@ export default function CreateFormScreen() {
   const colorScheme = useColorScheme() ?? 'light';
   const [formName, setFormName] = useState('');
   const [formType, setFormType] = useState<'demo'>('demo');
+  const [open, setOpen] = useState(false);
 
   const schema: FormSchema = [
     {
@@ -52,10 +53,10 @@ export default function CreateFormScreen() {
           label: 'Injury Severity',
           key: 'injurySeverity',
           options: [
-            'Minor',
-            'Major',
-            'Severe',
-            'Fatal'
+            { label: 'Minor', value: 'Minor' },
+            { label: 'Major', value: 'Major' },
+            { label: 'Severe', value: 'Severe' },
+            { label: 'Fatal', value: 'Fatal' }
           ]
         },
         {
@@ -147,12 +148,16 @@ export default function CreateFormScreen() {
           </View>
           <View style={styles.fieldContainer}>
             <ThemedText>Form Type</ThemedText>
-            <Picker
-              selectedValue={formType}
-              onValueChange={(val) => setFormType(val)}
-            >
-              <Picker.Item label="Demo Form" value="demo" />
-            </Picker>
+            <DropDownPicker
+              open={open}
+              value={formType}
+              items={[{ label: 'Demo Form', value: 'demo' }]}
+              setOpen={setOpen}
+              setValue={(cb) => setFormType(cb(formType) as 'demo')}
+              disabled
+              style={styles.dropdown}
+              dropDownContainerStyle={styles.dropdownContainer}
+            />
           </View>
           <Button
             title="Create"
@@ -179,5 +184,13 @@ const styles = StyleSheet.create({
     borderColor: '#ccc',
     padding: 8,
     borderRadius: 4,
+  },
+  dropdown: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+  },
+  dropdownContainer: {
+    borderWidth: 1,
+    borderColor: '#ccc',
   },
 });
