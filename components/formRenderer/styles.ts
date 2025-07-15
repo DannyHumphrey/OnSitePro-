@@ -10,12 +10,9 @@ export const styles = StyleSheet.create({
   },
   label: {
     fontWeight: 'bold',
+    marginTop: 10
   },
   textInput: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    padding: 8,
-    borderRadius: 4,
   },
   dropdown: {
     borderWidth: 1,

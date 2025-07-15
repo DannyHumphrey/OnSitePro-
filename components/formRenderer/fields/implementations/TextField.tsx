@@ -1,8 +1,8 @@
 import React from 'react';
-import { View, Text, LayoutChangeEvent } from 'react-native';
+import { LayoutChangeEvent, Text, View } from 'react-native';
 import { TextInput } from 'react-native-paper';
-import { FormField } from '../types';
 import { styles } from '../../styles';
+import { FormField } from '../types';
 
 type Props = {
   field: Extract<FormField, { type: 'text' }>;
@@ -22,6 +22,7 @@ export function TextField({ field, value, onChange, error, readOnly, onLayout }:
         value={value}
         editable={!readOnly}
         onChangeText={onChange}
+        mode='outlined'
       />
       {error && <Text style={styles.errorText}>{error}</Text>}
     </View>

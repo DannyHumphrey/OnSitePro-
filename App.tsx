@@ -1,30 +1,28 @@
-import { MaterialIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
+  NavigationContainer,
   DarkTheme as NavigationDarkTheme,
   DefaultTheme as NavigationDefaultTheme,
-  NavigationContainer,
 } from '@react-navigation/native';
-import { BottomNavigation, PaperProvider } from 'react-native-paper';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, View, Text } from 'react-native';
+import { ActivityIndicator, View } from 'react-native';
+import { BottomNavigation, PaperProvider } from 'react-native-paper';
 
-import { Colors } from '@/constants/Colors';
-import { lightTheme, darkTheme } from '@/constants/theme';
+import { darkTheme, lightTheme } from '@/constants/theme';
+import { FormCountsProvider, useFormCounts } from '@/context/FormCountsContext';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import type { DraftsStackParamList, RootStackParamList } from '@/navigation/types';
 import CreateFormScreen from '@/screens/CreateFormScreen';
-import DraftsScreen from '@/screens/DraftsScreen';
 import DashboardScreen from '@/screens/DashboardScreen';
+import DraftsScreen from '@/screens/DraftsScreen';
 import FormScreen from '@/screens/FormScreen';
 import InboxScreen from '@/screens/InboxScreen';
 import LoginScreen from '@/screens/LoginScreen';
 import OutboxScreen from '@/screens/OutboxScreen';
 import SentScreen from '@/screens/SentScreen';
-import { cleanupOldSentForms } from '@/services/sentService';
 import SettingsScreen from '@/screens/SettingsScreen';
-import { FormCountsProvider, useFormCounts } from '@/context/FormCountsContext';
+import { cleanupOldSentForms } from '@/services/sentService';
 
 const RootStack = createNativeStackNavigator<RootStackParamList>();
 const DraftsStack = createNativeStackNavigator<DraftsStackParamList>();
@@ -51,22 +49,21 @@ function MainTabNavigator() {
   const { counts } = useFormCounts();
   const [index, setIndex] = useState(0);
   const routes = [
-    { key: 'dashboard', title: 'Dashboard', focusedIcon: 'home' },
     { key: 'inbox', title: 'Inbox', focusedIcon: 'inbox', badge: counts.inbox },
     {
       key: 'drafts',
       title: 'Drafts',
-      focusedIcon: 'drafts',
+      focusedIcon: 'application-edit',
       badge: counts.drafts,
     },
     {
       key: 'outbox',
       title: 'Outbox',
-      focusedIcon: 'outbox',
+      focusedIcon: 'archive-sync',
       badge: counts.outbox,
     },
     { key: 'sent', title: 'Sent', focusedIcon: 'send', badge: counts.sent },
-    { key: 'settings', title: 'Settings', focusedIcon: 'settings' },
+    { key: 'settings', title: 'Settings', focusedIcon: 'application-cog' },
   ];
 
   const renderScene = BottomNavigation.SceneMap({

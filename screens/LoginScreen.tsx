@@ -1,17 +1,18 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useState } from 'react';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Constants from 'expo-constants';
+import { useState } from 'react';
 import {
   Alert,
+  Image,
   KeyboardAvoidingView,
   Platform,
   SafeAreaView,
   ScrollView,
   StyleSheet,
-  View,
   Text,
+  View,
 } from 'react-native';
 import { Button, TextInput } from 'react-native-paper';
 
@@ -21,7 +22,6 @@ import { RootStackParamList } from '@/navigation/types';
 type Props = { onLogin: () => void };
 
 export default function LoginScreen({ onLogin }: Props) {
-
   const appVersion =
     Constants.expoConfig?.version ?? Constants.manifest?.version ?? 'unknown';
 
@@ -71,6 +71,14 @@ export default function LoginScreen({ onLogin }: Props) {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView contentContainerStyle={styles.container}
           keyboardShouldPersistTaps="handled">
+          <View style={styles.logoContainer}>
+            <Image
+              source={require('@/assets/images/C365_Icon.png')}
+              style={styles.logo}
+              resizeMode="contain"
+            />
+          <Text style={styles.logoText}>C365 OnSite Pro</Text>
+          </View>
           <View style={styles.fieldContainer}>
             <TextInput
               placeholder="Username"
@@ -78,6 +86,8 @@ export default function LoginScreen({ onLogin }: Props) {
               onChangeText={setUsername}
               style={styles.textInput}
               autoCapitalize="none"
+              mode='outlined'
+              label="Username"
             />
           </View>
           <View style={styles.fieldContainer}>
@@ -87,11 +97,14 @@ export default function LoginScreen({ onLogin }: Props) {
               onChangeText={setPassword}
               secureTextEntry
               style={styles.textInput}
+              mode='outlined'
+              label='Password'
             />
           </View>
           <Button mode="contained" onPress={handleLogin} style={styles.button}>
-            Login
+            Log In
           </Button>
+          <Text style={styles.versionText}>© {new Date().getFullYear()} C365 Cloud all rights reserved</Text>
           <Text style={styles.versionText}>v{appVersion}</Text>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -106,6 +119,18 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     justifyContent: 'center',
   },
+  logoContainer: {
+    alignItems: 'center',
+    marginBottom: spacing.lg,
+  },
+  logo: {
+    width: 120,
+    height: 120,
+  },
+  logoText: {
+    fontSize: 28,
+    marginTop: 15
+  },
   fieldContainer: {
     gap: spacing.sm,
   },
@@ -114,6 +139,8 @@ const styles = StyleSheet.create({
   },
   button: {
     marginTop: spacing.md,
+    backgroundColor: 'rgba(56,69,74,1)',
+    borderRadius: 3
   },
   versionText: {
     marginTop: spacing.lg,

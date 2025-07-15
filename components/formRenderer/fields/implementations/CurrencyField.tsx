@@ -1,7 +1,7 @@
 import React from 'react';
-import { View, Text, TextInput, LayoutChangeEvent } from 'react-native';
-import { FormField } from '../types';
+import { LayoutChangeEvent, Text, TextInput, View } from 'react-native';
 import { styles } from '../../styles';
+import { FormField } from '../types';
 
 type Props = {
   field: Extract<FormField, { type: 'currency' }>;

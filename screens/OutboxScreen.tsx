@@ -1,20 +1,20 @@
+import { useFocusEffect } from '@react-navigation/native';
 import { useCallback, useEffect, useState } from 'react';
 import { FlatList, StyleSheet, View } from 'react-native';
+import { Card, IconButton } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Button, Card } from 'react-native-paper';
-import { useFocusEffect } from '@react-navigation/native';
 
-import { ThemedView } from '@/components/ThemedView';
-import { ThemedText } from '@/components/ThemedText';
-import { spacing } from '@/constants/styles';
 import { StatusBadge } from '@/components/StatusBadge';
+import { ThemedText } from '@/components/ThemedText';
+import { ThemedView } from '@/components/ThemedView';
+import { spacing } from '@/constants/styles';
+import { useFormCounts } from '@/context/FormCountsContext';
+import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 import {
   getAllOutbox,
   syncOutbox,
   type OutboxForm,
 } from '@/services/outboxService';
-import { useFormCounts } from '@/context/FormCountsContext';
-import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 
 export default function OutboxScreen() {
   const [forms, setForms] = useState<OutboxForm[]>([]);
@@ -48,24 +48,31 @@ export default function OutboxScreen() {
 
   const renderItem = ({ item }: { item: OutboxForm }) => (
     <Card style={styles.item}>
-      <Card.Title title={item.name} />
+      <Card.Title title={item.name} 
+      right={() => (
+          <View style={styles.editButtons}>
+            <StatusBadge
+              label={item.syncError ? 'Failed' : 'Pending'}
+              color={item.syncError ? '#d9534f' : '#f0ad4e'}
+            />
+            <IconButton
+              icon="pencil"
+              size={20}
+              onPress={() => handleSync()}
+              accessibilityLabel="Edit"
+            />
+          </View>
+        )}/>
       <Card.Content>
         <ThemedText style={styles.dateText}>
-          {new Date(item.createdAt).toLocaleDateString()}
+          Date Created: {new Date(item.createdAt).toLocaleDateString()}
         </ThemedText>
         {item.syncedAt && (
           <ThemedText style={styles.dateText}>
             Last synced at {new Date(item.syncedAt).toLocaleDateString()}
           </ThemedText>
         )}
-        <StatusBadge
-          label={item.syncError ? 'Failed' : 'Pending'}
-          icon={item.syncError ? '❌' : '🔄'}
-          color={item.syncError ? '#d9534f' : '#f0ad4e'}
-        />
-        <Button mode="contained" onPress={handleSync} style={styles.button}>
-          Sync Now
-        </Button>
+        
       </Card.Content>
     </Card>
   );
@@ -113,5 +120,10 @@ const styles = StyleSheet.create({
   },
   dateText: {
     marginBottom: spacing.sm,
+  },
+  editButtons: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    alignItems: 'flex-end',
   },
 });

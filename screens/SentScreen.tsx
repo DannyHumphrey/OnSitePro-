@@ -2,14 +2,14 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { useCallback, useState } from 'react';
 import { FlatList, StyleSheet } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { Card } from 'react-native-paper';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
+import type { FormSchema } from '@/components/formRenderer/fields/types';
 import { StatusBadge } from '@/components/StatusBadge';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { spacing } from '@/constants/styles';
-import type { FormSchema } from '@/components/formRenderer/fields/types';
 import { useFormCounts } from '@/context/FormCountsContext';
 
 export type SentForm = {

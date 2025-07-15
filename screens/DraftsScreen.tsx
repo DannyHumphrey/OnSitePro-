@@ -1,4 +1,3 @@
-import { MaterialIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import * as FileSystem from 'expo-file-system';
@@ -9,14 +8,14 @@ import {
   StyleSheet,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { Card, FAB, IconButton, TextInput, useTheme } from 'react-native-paper';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
+import { spacing } from '@/constants/styles';
 import { useFormCounts } from '@/context/FormCountsContext';
 import { useColorScheme } from '@/hooks/useColorScheme';
-import { spacing } from '@/constants/styles';
 import { DraftsStackParamList } from '@/navigation/types';
 import {
   getAllDrafts,
@@ -203,7 +202,7 @@ const styles = StyleSheet.create({
   },
   fab: {
     position: 'absolute',
-    bottom: 100,
+    bottom: 40,
     right: 32,
     width: 56,
     height: 56,
