@@ -8,14 +8,13 @@ import {
   StyleSheet,
   View,
 } from 'react-native';
-import { Card, FAB, IconButton, TextInput, useTheme } from 'react-native-paper';
+import { Card, FAB, IconButton, TextInput } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { spacing } from '@/constants/styles';
 import { useFormCounts } from '@/context/FormCountsContext';
-import { useColorScheme } from '@/hooks/useColorScheme';
 import { DraftsStackParamList } from '@/navigation/types';
 import {
   getAllDrafts,
@@ -29,12 +28,8 @@ export default function DraftsScreen() {
   const navigation = useNavigation<
     NativeStackNavigationProp<DraftsStackParamList>
   >();
-  const colorScheme = useColorScheme() ?? 'light';
-  const { colors } = useTheme();
   const [drafts, setDrafts] = useState<DraftForm[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'az'>('newest');
-  const [filterBy, setFilterBy] = useState('All');
   const { setCounts } = useFormCounts();
 
   const loadDrafts = useCallback(async () => {
@@ -111,19 +106,7 @@ export default function DraftsScreen() {
       d.name.toLowerCase().includes(q) ||
       d.formType.toLowerCase().includes(q) ||
       address.includes(q);
-    const matchesFilter = filterBy === 'All' || d.formType === filterBy;
-    return matchesQuery && matchesFilter;
-  });
-
-  const sortedDrafts = [...filteredDrafts].sort((a, b) => {
-    switch (sortBy) {
-      case 'oldest':
-        return a.createdAt.localeCompare(b.createdAt);
-      case 'az':
-        return a.name.localeCompare(b.name);
-      default:
-        return b.createdAt.localeCompare(a.createdAt);
-    }
+    return matchesQuery;
   });
 
   const renderItem = ({ item }: { item: DraftForm }) => (
@@ -170,11 +153,11 @@ export default function DraftsScreen() {
         />
       </View>
       <FlatList
-        data={sortedDrafts}
+        data={filteredDrafts}
         keyExtractor={(item) => item.id}
         renderItem={renderItem}
         contentContainerStyle={
-          sortedDrafts.length === 0 ? styles.emptyContainer : styles.listContainer
+          filteredDrafts.length === 0 ? styles.emptyContainer : styles.listContainer
         }
         ListEmptyComponent={
           <ThemedView style={styles.emptyContainer}>

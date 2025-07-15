@@ -11,6 +11,8 @@ import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { spacing } from '@/constants/styles';
 import { useFormCounts } from '@/context/FormCountsContext';
+import { DraftsStackParamList } from '@/navigation/types';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 export type SentForm = {
   id: string;
@@ -23,8 +25,10 @@ export type SentForm = {
   syncedAt?: string;
 };
 
-export default function SentScreen() {
-  const navigation = useNavigation();
+export default function SentScreen() { 
+  const navigation = useNavigation<
+      NativeStackNavigationProp<DraftsStackParamList>
+    >();
   const [forms, setForms] = useState<SentForm[]>([]);
   const { setCounts } = useFormCounts();
 
@@ -53,15 +57,13 @@ export default function SentScreen() {
   );
 
   const handlePress = (form: SentForm) => {
-    navigation.navigate('DraftsTab', {
-      screen: 'FormScreen',
-      params: {
-        schema: form.schema,
-        formType: form.formType,
-        formName: form.name,
-        data: form.data,
-        readOnly: true,
-      },
+    navigation.navigate('FormScreen', {
+      schema: form.schema,
+      formType: form.formType,
+      formName: form.name,
+      data: form.data,
+      draftId: form.id,
+      readOnly: true,
     });
   };
 

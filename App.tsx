@@ -14,7 +14,6 @@ import { FormCountsProvider, useFormCounts } from '@/context/FormCountsContext';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import type { DraftsStackParamList, RootStackParamList } from '@/navigation/types';
 import CreateFormScreen from '@/screens/CreateFormScreen';
-import DashboardScreen from '@/screens/DashboardScreen';
 import DraftsScreen from '@/screens/DraftsScreen';
 import FormScreen from '@/screens/FormScreen';
 import InboxScreen from '@/screens/InboxScreen';
@@ -67,7 +66,6 @@ function MainTabNavigator() {
   ];
 
   const renderScene = BottomNavigation.SceneMap({
-    dashboard: DashboardScreen,
     inbox: InboxScreen,
     drafts: DraftsTabNavigator,
     outbox: OutboxScreen,
