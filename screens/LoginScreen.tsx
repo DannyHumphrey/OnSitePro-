@@ -5,25 +5,22 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Constants from 'expo-constants';
 import {
   Alert,
-  Button,
   KeyboardAvoidingView,
   Platform,
   SafeAreaView,
   ScrollView,
   StyleSheet,
-  TextInput,
   View,
   Text,
 } from 'react-native';
+import { Button, TextInput } from 'react-native-paper';
 
-import { Colors } from '@/constants/Colors';
-import { useColorScheme } from '@/hooks/useColorScheme';
+import { spacing } from '@/constants/styles';
 import { RootStackParamList } from '@/navigation/types';
 
 type Props = { onLogin: () => void };
 
 export default function LoginScreen({ onLogin }: Props) {
-  const colorScheme = useColorScheme() ?? 'light';
 
   const appVersion =
     Constants.expoConfig?.version ?? Constants.manifest?.version ?? 'unknown';
@@ -92,11 +89,9 @@ export default function LoginScreen({ onLogin }: Props) {
               style={styles.textInput}
             />
           </View>
-          <Button
-            title="Login"
-            onPress={handleLogin}
-            color={Colors[colorScheme].tint}
-          />
+          <Button mode="contained" onPress={handleLogin} style={styles.button}>
+            Login
+          </Button>
           <Text style={styles.versionText}>v{appVersion}</Text>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -106,22 +101,22 @@ export default function LoginScreen({ onLogin }: Props) {
 
 const styles = StyleSheet.create({
   container: {
-    padding: 16,
-    gap: 16,
+    padding: spacing.md,
+    gap: spacing.md,
     flexGrow: 1,
     justifyContent: 'center',
   },
   fieldContainer: {
-    gap: 8,
+    gap: spacing.sm,
   },
   textInput: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    padding: 8,
-    borderRadius: 4,
+    marginTop: spacing.xs,
+  },
+  button: {
+    marginTop: spacing.md,
   },
   versionText: {
-    marginTop: 32,
+    marginTop: spacing.lg,
     fontSize: 12,
     opacity: 0.6,
     textAlign: 'center',

@@ -1,27 +1,22 @@
 import { MaterialIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import {
-  DarkTheme,
-  DefaultTheme,
+  DarkTheme as NavigationDarkTheme,
+  DefaultTheme as NavigationDefaultTheme,
   NavigationContainer,
-  getFocusedRouteNameFromRoute,
 } from '@react-navigation/native';
+import { BottomNavigation, PaperProvider } from 'react-native-paper';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Platform, View, Text } from 'react-native';
+import { ActivityIndicator, View, Text } from 'react-native';
 
-import { HapticTab } from '@/components/HapticTab';
-import TabBarBackground from '@/components/ui/TabBarBackground';
 import { Colors } from '@/constants/Colors';
+import { lightTheme, darkTheme } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/useColorScheme';
-import type {
-  DraftsStackParamList,
-  MainTabParamList,
-  RootStackParamList,
-} from '@/navigation/types';
+import type { DraftsStackParamList, RootStackParamList } from '@/navigation/types';
 import CreateFormScreen from '@/screens/CreateFormScreen';
 import DraftsScreen from '@/screens/DraftsScreen';
+import DashboardScreen from '@/screens/DashboardScreen';
 import FormScreen from '@/screens/FormScreen';
 import InboxScreen from '@/screens/InboxScreen';
 import LoginScreen from '@/screens/LoginScreen';
@@ -31,7 +26,6 @@ import { cleanupOldSentForms } from '@/services/sentService';
 import SettingsScreen from '@/screens/SettingsScreen';
 import { FormCountsProvider, useFormCounts } from '@/context/FormCountsContext';
 
-const Tab = createBottomTabNavigator<MainTabParamList>();
 const RootStack = createNativeStackNavigator<RootStackParamList>();
 const DraftsStack = createNativeStackNavigator<DraftsStackParamList>();
 
@@ -54,103 +48,46 @@ function DraftsTabNavigator() {
 }
 
 function MainTabNavigator() {
-  const colorScheme = useColorScheme();
   const { counts } = useFormCounts();
-  const renderIcon = (name: keyof typeof MaterialIcons.glyphMap, color: string, count: number) => (
-    <View>
-      <MaterialIcons size={28} color={color} name={name} />
-      {count > 0 && (
-        <View
-          style={{
-            position: 'absolute',
-            right: -6,
-            top: -4,
-            backgroundColor: 'red',
-            borderRadius: 10,
-            paddingHorizontal: 6,
-            paddingVertical: 2,
-          }}>
-          <Text style={{ color: 'white', fontSize: 10 }}>{count}</Text>
-        </View>
-      )}
-    </View>
-  );
+  const [index, setIndex] = useState(0);
+  const routes = [
+    { key: 'dashboard', title: 'Dashboard', focusedIcon: 'home' },
+    { key: 'inbox', title: 'Inbox', focusedIcon: 'inbox', badge: counts.inbox },
+    {
+      key: 'drafts',
+      title: 'Drafts',
+      focusedIcon: 'drafts',
+      badge: counts.drafts,
+    },
+    {
+      key: 'outbox',
+      title: 'Outbox',
+      focusedIcon: 'outbox',
+      badge: counts.outbox,
+    },
+    { key: 'sent', title: 'Sent', focusedIcon: 'send', badge: counts.sent },
+    { key: 'settings', title: 'Settings', focusedIcon: 'settings' },
+  ];
+
+  const renderScene = BottomNavigation.SceneMap({
+    dashboard: DashboardScreen,
+    inbox: InboxScreen,
+    drafts: DraftsTabNavigator,
+    outbox: OutboxScreen,
+    sent: SentScreen,
+    settings: SettingsScreen,
+  });
+
   return (
-    <Tab.Navigator
-      initialRouteName="DraftsTab"
-      screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
-        headerShown: false,
-        tabBarButton: HapticTab,
-        tabBarBackground: TabBarBackground,
-        tabBarStyle: Platform.select({
-          ios: {
-            position: 'absolute',
-          },
-          default: {},
-        }),
-      }}>
-      <Tab.Screen
-        name="InboxTab"
-        component={InboxScreen}
-        options={{
-          title: 'Inbox',
-          tabBarIcon: ({ color }) => renderIcon('inbox', color, counts.inbox),
-        }}
-      />
-      <Tab.Screen
-        name="DraftsTab"
-        component={DraftsTabNavigator}
-        options={{
-          title: 'Drafts',
-          tabBarIcon: ({ color }) => renderIcon('drafts', color, counts.drafts),
-        }}
-      />
-      <Tab.Screen
-        name="OutboxTab"
-        component={OutboxScreen}
-        options={{
-          title: 'Outbox',
-          tabBarIcon: ({ color }) => renderIcon('outbox', color, counts.outbox),
-        }}
-      />
-      <Tab.Screen
-        name="SentTab"
-        component={SentScreen}
-        options={{
-          title: 'Sent',
-          tabBarIcon: ({ color }) => renderIcon('send', color, counts.sent),
-        }}
-      />
-      <Tab.Screen
-        name="SettingsTab"
-        component={SettingsScreen}
-        options={{
-          title: 'Settings',
-          tabBarIcon: ({ color }) => (
-            <MaterialIcons size={28} color={color} name="settings" />
-          ),
-        }}
-      />
-    </Tab.Navigator>
+    <BottomNavigation
+      navigationState={{ index, routes }}
+      onIndexChange={setIndex}
+      renderScene={renderScene}
+      safeAreaInsets={{ bottom: 0 }}
+    />
   );
 }
 
-function getTabTitle(route: any) {
-  const routeName = getFocusedRouteNameFromRoute(route) ?? 'DraftsTab';
-  switch (routeName) {
-    case 'InboxTab':
-      return 'Inbox';
-    case 'OutboxTab':
-      return 'Outbox';
-    case 'SentTab':
-      return 'Sent';
-    case 'SettingsTab':
-      return 'Settings';
-    default:
-      return 'Drafts';
-  }
-}
 
 export default function App() {
   const colorScheme = useColorScheme();
@@ -185,9 +122,12 @@ export default function App() {
       </View>
     );
   }
+  const paperTheme = colorScheme === 'dark' ? darkTheme : lightTheme;
+  const navigationTheme = colorScheme === 'dark' ? NavigationDarkTheme : NavigationDefaultTheme;
   return (
     <FormCountsProvider>
-      <NavigationContainer theme={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+      <PaperProvider theme={paperTheme}>
+      <NavigationContainer theme={{...navigationTheme, colors: { ...navigationTheme.colors, background: paperTheme.colors.background }}}>
         <RootStack.Navigator
           screenOptions={{ headerShown: false }}
           initialRouteName={isLoggedIn ? 'MainTabs' : 'Login'}>
@@ -199,13 +139,11 @@ export default function App() {
         <RootStack.Screen
           name="MainTabs"
           component={MainTabNavigator}
-          options={({ route }) => ({
-            headerShown: true,
-            headerTitle: getTabTitle(route),
-          })}
+          options={{ headerShown: false }}
         />
       </RootStack.Navigator>
     </NavigationContainer>
+    </PaperProvider>
     </FormCountsProvider>
   );
 }
