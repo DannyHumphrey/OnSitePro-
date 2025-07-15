@@ -1,6 +1,6 @@
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Button,
   KeyboardAvoidingView,
@@ -18,155 +18,45 @@ import { ThemedText } from '@/components/ThemedText';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { DraftsStackParamList } from '@/navigation/types';
+import {
+  getFormTemplates,
+  type FormTemplate,
+} from '@/services/formTemplateService';
 
 export default function CreateFormScreen() {
   const navigation =
     useNavigation<NativeStackNavigationProp<DraftsStackParamList>>();
   const colorScheme = useColorScheme() ?? 'light';
   const [formName, setFormName] = useState('');
-  const [formType, setFormType] = useState<'demo'>('demo');
+  const [templates, setTemplates] = useState<FormTemplate[]>([]);
+  const [formType, setFormType] = useState<string>('');
+  const [schema, setSchema] = useState<FormSchema | null>(null);
   const [open, setOpen] = useState(false);
 
-const schema: FormSchema = [
-  {
-    key: 'personInvolved',
-    label: 'Person Involved',
-    fields: [
-      {
-        type: 'text',
-        label: 'Full Name',
-        key: 'fullName',
-        required: true,
-      },
-      {
-        type: 'text',
-        label: 'Job Title',
-        key: 'jobTitle',
-        visibleWhen: {
-          all: [{ key: 'personInvolved.fullName', notEquals: '' }]
+  useEffect(() => {
+    getFormTemplates()
+      .then((data) => {
+        setTemplates(data);
+        if (data.length > 0) {
+          setFormType(data[0].id);
+          setSchema(data[0].schema);
         }
-      },
-      { type: 'date', label: 'Date of Visit', key: 'visitDate' },
-      { type: 'photo', label: 'Take a Picture', key: 'photo' },
-      {
-        type: 'select',
-        label: 'Injury Severity',
-        key: 'injurySeverity',
-        options: [
-          { label: 'Minor', value: 'Minor' },
-          { label: 'Major', value: 'Major' },
-          { label: 'Severe', value: 'Severe' },
-          { label: 'Fatal', value: 'Fatal' }
-        ]
-      },
-      {
-        type: 'multiselect',
-        label: 'Injury Location',
-        key: 'injuryLocation',
-        options: [
-          'Head',
-          'Neck',
-          'Back',
-          'Chest',
-          'Abdomen',
-          'Pelvis',
-          'Upper Extremity',
-          'Lower Extremity',
-          'Other'
-        ]
-      },
-      {
-        type: 'number',
-        label: 'Number of people involved',
-        key: 'peopleCount'
-      }
-    ],
-  },
-  {
-    key: 'witnessStatements',
-    label: 'Witness Statement',
-    repeatable: true,
-    fields: [
-      { type: 'text', label: 'Name', key: 'name', required: true },
-      { type: 'text', label: 'Statement', key: 'statement' },
-      {
-        type: 'boolean',
-        label: 'Follow-up Required?',
-        key: 'followUpRequired',
-        visibleWhen: {
-          any: [{ key: 'statement', notEquals: '' }, { key: 'name', notEquals: '' }]
-        }
-      }
-    ],
-  },
-  {
-    key: 'signOff',
-    label: 'Sign Off',
-    fields: [
-      {
-        type: 'text',
-        label: 'Name of person signing off',
-        key: 'nameOfPersonSigningOff',
-        required: true,
-      },
-      {
-        type: 'text',
-        label: 'Job Title',
-        key: 'jobTitle',
-        visibleWhen: {
-          all: [{ key: 'signOff.nameOfPersonSigningOff', notEquals: '' }]
-        }
-      }
-    ],
-  },
-  {
-    key: 'extraInputsDemo',
-    label: 'Extra Input Types Demo',
-    fields: [
-      {
-        type: 'currency',
-        label: 'Estimated Cost',
-        key: 'estimatedCost',
-        required: true,
-        currencySymbol: '£',
-      },
-      {
-        type: 'decimal',
-        label: 'Measured pH Level',
-        key: 'phLevel',
-      },
-      {
-        type: 'barcode',
-        label: 'Scan Barcode ID',
-        key: 'barcodeId',
-      },
-      {
-        type: 'time',
-        label: 'Time of Incident',
-        key: 'incidentTime',
-      },
-      {
-        type: 'datetime',
-        label: 'Date and Time Reported',
-        key: 'reportedAt',
-      },
-      {
-        type: 'imageSelect',
-        label: 'Attach Plan Diagram',
-        key: 'planDiagram',
-      },
-      {
-        type: 'signature',
-        label: 'Supervisor Signature',
-        key: 'supervisorSignature',
-      }
-    ]
-  }
-];
+      })
+      .catch((err) => console.log('Error loading form templates', err));
+  }, []);
+
+  useEffect(() => {
+    const template = templates.find((t) => t.id === formType);
+    if (template) {
+      setSchema(template.schema);
+    }
+  }, [formType, templates]);
+
 
   
 
   const handleStart = () => {
+    if (!schema) return;
     navigation.navigate('FormScreen', { schema, formType, formName });
   };
 
@@ -195,10 +85,12 @@ const schema: FormSchema = [
             <DropDownPicker
               open={open}
               value={formType}
-              items={[{ label: 'Demo Form', value: 'demo' }]}
+              items={templates.map((t) => ({ label: t.name, value: t.id }))}
               setOpen={setOpen}
-              setValue={(cb) => setFormType(cb(formType) as 'demo')}
-              disabled
+              setValue={(callback) => {
+                const val = callback(formType);
+                setFormType(val);
+              }}
               style={styles.dropdown}
               dropDownContainerStyle={styles.dropdownContainer}
             />
@@ -207,6 +99,7 @@ const schema: FormSchema = [
             title="Create"
             onPress={handleStart}
             color={Colors[colorScheme].tint}
+            disabled={!schema}
           />
           <Button title="Back" onPress={() => navigation.goBack()} />
         </ScrollView>
