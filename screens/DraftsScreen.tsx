@@ -6,17 +6,17 @@ import { useCallback, useState } from 'react';
 import {
   Alert,
   FlatList,
-  Pressable,
   StyleSheet,
-  TextInput,
-  View
+  View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Card, FAB, IconButton, TextInput, useTheme } from 'react-native-paper';
 
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
-import { Colors } from '@/constants/Colors';
 import { useFormCounts } from '@/context/FormCountsContext';
 import { useColorScheme } from '@/hooks/useColorScheme';
+import { spacing } from '@/constants/styles';
 import { DraftsStackParamList } from '@/navigation/types';
 import {
   getAllDrafts,
@@ -31,6 +31,7 @@ export default function DraftsScreen() {
     NativeStackNavigationProp<DraftsStackParamList>
   >();
   const colorScheme = useColorScheme() ?? 'light';
+  const { colors } = useTheme();
   const [drafts, setDrafts] = useState<DraftForm[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'az'>('newest');
@@ -127,47 +128,42 @@ export default function DraftsScreen() {
   });
 
   const renderItem = ({ item }: { item: DraftForm }) => (
-    <View style={styles.draftItem}>
-      <View style={styles.draftHeader}>
-        <ThemedText type="defaultSemiBold">Title: {item.name}</ThemedText>
-        <View style={styles.editButtons}>
-          <Pressable
-          onPress={() => confirmDelete(item.id)}
-          accessibilityLabel="Delete Draft"
-          style={styles.deleteButton}>
-          <MaterialIcons
-            name="delete"
-            size={20}
-            color={Colors[colorScheme].tint}
-          />
-        </Pressable>
-        <Pressable
-          onPress={() => handleResume(item)}
-          accessibilityLabel="Edit"
-          style={styles.deleteButton}>
-          <MaterialIcons
-            name="edit"
-            size={20}
-            color={Colors[colorScheme].tint}
-          />
-        </Pressable>
-        </View>
-      </View>
-      <ThemedText style={styles.dateText}>
-        Form Type: {item.formType}
-      </ThemedText>
-      <ThemedText style={styles.dateText}>
-        Date Created: {new Date(item.createdAt).toLocaleDateString()} {new Date(item.createdAt).toLocaleTimeString()}
-      </ThemedText>
-    </View>
+    <Card style={styles.draftItem} onPress={() => handleResume(item)}>
+      <Card.Title
+        title={item.name}
+        right={() => (
+          <View style={styles.editButtons}>
+            <IconButton
+              icon="pencil"
+              size={20}
+              onPress={() => handleResume(item)}
+              accessibilityLabel="Edit"
+            />
+            <IconButton
+              icon="delete"
+              size={20}
+              onPress={() => confirmDelete(item.id)}
+              accessibilityLabel="Delete Draft"
+            />
+          </View>
+        )}
+      />
+      <Card.Content>
+        <ThemedText>Form Type: {item.formType}</ThemedText>
+        <ThemedText style={styles.dateText}>
+          Date Created: {new Date(item.createdAt).toLocaleDateString()} {new Date(item.createdAt).toLocaleTimeString()}
+        </ThemedText>
+      </Card.Content>
+    </Card>
   );
 
   const formTypes = Array.from(new Set(drafts.map((d) => d.formType)));
 
   return (
-    <ThemedView style={{ flex: 1 }}>
+    <SafeAreaView style={{ flex: 1 }}>
       <View style={styles.controls}>
         <TextInput
+          mode="outlined"
           style={styles.searchInput}
           placeholder="Search"
           value={searchQuery}
@@ -187,32 +183,23 @@ export default function DraftsScreen() {
           </ThemedView>
         }
       />
-      <Pressable
-        style={({ pressed }) => [
-          styles.fab,
-          {
-            backgroundColor: Colors[colorScheme].tint,
-            opacity: pressed ? 0.8 : 1,
-          },
-        ]}
+      <FAB
+        icon="plus"
+        style={styles.fab}
         onPress={() => navigation.navigate('CreateFormScreen')}
-        accessibilityLabel="Create New Form">
-        <MaterialIcons name="add" size={28} color="#fff" />
-      </Pressable>
-    </ThemedView>
+        accessibilityLabel="Create New Form"
+      />
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   controls: {
-    padding: 16,
-    gap: 8,
+    padding: spacing.md,
+    gap: spacing.sm,
   },
   searchInput: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 4,
-    padding: 8,
+    marginBottom: spacing.sm,
   },
   fab: {
     position: 'absolute',
@@ -226,8 +213,8 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   listContainer: {
-    padding: 16,
-    gap: 16,
+    padding: spacing.md,
+    gap: spacing.md,
   },
   emptyContainer: {
     flex: 1,
@@ -235,12 +222,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   draftItem: {
-    gap: 4,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 8,
-    backgroundColor: '#dddddd'
+    marginBottom: spacing.sm,
   },
   draftHeader: {
     flexDirection: 'row',
@@ -251,9 +233,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'flex-end',
     alignItems: 'flex-end',
-  },
-  deleteButton: {
-    padding: 4,
   },
   dateText: {
     marginBottom: 8,

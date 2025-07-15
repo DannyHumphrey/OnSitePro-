@@ -1,11 +1,14 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { useCallback, useState } from 'react';
-import { FlatList, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { FlatList, StyleSheet } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Card } from 'react-native-paper';
 
 import { StatusBadge } from '@/components/StatusBadge';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
+import { spacing } from '@/constants/styles';
 import type { FormSchema } from '@/components/formRenderer/fields/types';
 import { useFormCounts } from '@/context/FormCountsContext';
 
@@ -63,16 +66,17 @@ export default function SentScreen() {
   };
 
   const renderItem = ({ item }: { item: SentForm }) => (
-    <TouchableOpacity style={styles.item} onPress={() => handlePress(item)}>
-      <View>
-        <View style={styles.header}>
-        <ThemedText type="defaultSemiBold">Title: {item.name}</ThemedText>
-        <StatusBadge
-          label={item.isSynced ? 'Synced' : 'Submitted'}
-          color={item.isSynced ? '#5cb85c' : '#0a7ea4'}
-        />
-        </View>
-        
+    <Card style={styles.item} onPress={() => handlePress(item)}>
+      <Card.Title
+        title={item.name}
+        right={() => (
+          <StatusBadge
+            label={item.isSynced ? 'Synced' : 'Submitted'}
+            color={item.isSynced ? '#5cb85c' : '#0a7ea4'}
+          />
+        )}
+      />
+      <Card.Content>
         <ThemedText>Form Type: {item.formType}</ThemedText>
         <ThemedText style={styles.dateText}>
           Submitted On: {new Date(item.updatedAt).toLocaleDateString()} {new Date(item.updatedAt).toLocaleTimeString()}
@@ -82,13 +86,12 @@ export default function SentScreen() {
             Last synced at {new Date(item.syncedAt).toLocaleDateString()}
           </ThemedText>
         )}
-        
-      </View>
-    </TouchableOpacity>
+      </Card.Content>
+    </Card>
   );
 
   return (
-    <ThemedView style={{ flex: 1 }}>
+    <SafeAreaView style={{ flex: 1 }}>
       <FlatList
         data={forms}
         keyExtractor={(item) => item.id}
@@ -102,14 +105,14 @@ export default function SentScreen() {
           </ThemedView>
         }
       />
-    </ThemedView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   listContainer: {
-    padding: 16,
-    gap: 16,
+    padding: spacing.md,
+    gap: spacing.md,
   },
   emptyContainer: {
     flex: 1,
@@ -122,14 +125,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   item: {
-    gap: 4,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 8,
-    backgroundColor: '#d5ff87'
+    marginBottom: spacing.sm,
+    padding: spacing.sm,
   },
   dateText: {
-    marginBottom: 8,
+    marginBottom: spacing.sm,
   },
 });

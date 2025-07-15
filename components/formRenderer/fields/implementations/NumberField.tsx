@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, TextInput, LayoutChangeEvent } from 'react-native';
+import { View, Text, LayoutChangeEvent } from 'react-native';
+import { TextInput } from 'react-native-paper';
 import { FormField } from '../types';
 import { styles } from '../../styles';
 

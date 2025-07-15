@@ -1,9 +1,12 @@
 import { useCallback, useEffect, useState } from 'react';
-import { FlatList, StyleSheet, View, Button } from 'react-native';
+import { FlatList, StyleSheet, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Button, Card } from 'react-native-paper';
 import { useFocusEffect } from '@react-navigation/native';
 
 import { ThemedView } from '@/components/ThemedView';
 import { ThemedText } from '@/components/ThemedText';
+import { spacing } from '@/constants/styles';
 import { StatusBadge } from '@/components/StatusBadge';
 import {
   getAllOutbox,
@@ -44,27 +47,31 @@ export default function OutboxScreen() {
   );
 
   const renderItem = ({ item }: { item: OutboxForm }) => (
-    <View style={styles.item}>
-      <ThemedText type="defaultSemiBold">{item.name}</ThemedText>
-      <ThemedText style={styles.dateText}>
-        {new Date(item.createdAt).toLocaleDateString()}
-      </ThemedText>
-      {item.syncedAt && (
+    <Card style={styles.item}>
+      <Card.Title title={item.name} />
+      <Card.Content>
         <ThemedText style={styles.dateText}>
-          Last synced at {new Date(item.syncedAt).toLocaleDateString()}
+          {new Date(item.createdAt).toLocaleDateString()}
         </ThemedText>
-      )}
-      <StatusBadge
-        label={item.syncError ? 'Failed' : 'Pending'}
-        icon={item.syncError ? '❌' : '🔄'}
-        color={item.syncError ? '#d9534f' : '#f0ad4e'}
-      />
-      <Button title="Sync Now" onPress={handleSync} />
-    </View>
+        {item.syncedAt && (
+          <ThemedText style={styles.dateText}>
+            Last synced at {new Date(item.syncedAt).toLocaleDateString()}
+          </ThemedText>
+        )}
+        <StatusBadge
+          label={item.syncError ? 'Failed' : 'Pending'}
+          icon={item.syncError ? '❌' : '🔄'}
+          color={item.syncError ? '#d9534f' : '#f0ad4e'}
+        />
+        <Button mode="contained" onPress={handleSync} style={styles.button}>
+          Sync Now
+        </Button>
+      </Card.Content>
+    </Card>
   );
 
   return (
-    <ThemedView style={{ flex: 1 }}>
+    <SafeAreaView style={{ flex: 1 }}>
       {!isOnline && (
         <ThemedText style={{ color: 'red', textAlign: 'center', marginTop: 8 }}>
           You are offline.
@@ -83,14 +90,14 @@ export default function OutboxScreen() {
           </ThemedView>
         }
       />
-    </ThemedView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   listContainer: {
-    padding: 16,
-    gap: 16,
+    padding: spacing.md,
+    gap: spacing.md,
   },
   emptyContainer: {
     flex: 1,
@@ -98,13 +105,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   item: {
-    gap: 4,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 8,
+    marginBottom: spacing.sm,
+    padding: spacing.sm,
+  },
+  button: {
+    marginTop: spacing.sm,
   },
   dateText: {
-    marginBottom: 8,
+    marginBottom: spacing.sm,
   },
 });
