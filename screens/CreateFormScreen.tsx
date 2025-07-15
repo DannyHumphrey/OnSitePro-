@@ -1,6 +1,6 @@
-import { useNavigation } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useEffect, useState } from 'react';
+import { useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { useEffect, useState } from "react";
 import {
   Button,
   KeyboardAvoidingView,
@@ -10,26 +10,26 @@ import {
   StyleSheet,
   TextInput,
   View,
-} from 'react-native';
-import DropDownPicker from 'react-native-dropdown-picker';
+} from "react-native";
+import DropDownPicker from "react-native-dropdown-picker";
 
-import type { FormSchema } from '@/components/formRenderer/fields/types';
-import { ThemedText } from '@/components/ThemedText';
-import { Colors } from '@/constants/Colors';
-import { useColorScheme } from '@/hooks/useColorScheme';
-import { DraftsStackParamList } from '@/navigation/types';
+import type { FormSchema } from "@/components/formRenderer/fields/types";
+import { ThemedText } from "@/components/ThemedText";
+import { Colors } from "@/constants/Colors";
+import { useColorScheme } from "@/hooks/useColorScheme";
+import { RootStackParamList } from "@/navigation/types";
 import {
   getFormTemplates,
   type FormTemplate,
-} from '@/services/formTemplateService';
+} from "@/services/formTemplateService";
 
 export default function CreateFormScreen() {
   const navigation =
-    useNavigation<NativeStackNavigationProp<DraftsStackParamList>>();
-  const colorScheme = useColorScheme() ?? 'light';
-  const [formName, setFormName] = useState('');
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const colorScheme = useColorScheme() ?? "light";
+  const [formName, setFormName] = useState("");
   const [templates, setTemplates] = useState<FormTemplate[]>([]);
-  const [formType, setFormType] = useState<string>('');
+  const [formType, setFormType] = useState<string>("");
   const [schema, setSchema] = useState<FormSchema | null>(null);
   const [open, setOpen] = useState(false);
 
@@ -42,7 +42,7 @@ export default function CreateFormScreen() {
           setSchema(data[0].schema);
         }
       })
-      .catch((err) => console.log('Error loading form templates', err));
+      .catch((err) => console.log("Error loading form templates", err));
   }, []);
 
   useEffect(() => {
@@ -52,19 +52,16 @@ export default function CreateFormScreen() {
     }
   }, [formType, templates]);
 
-
-  
-
   const handleStart = () => {
     if (!schema) return;
-    navigation.navigate('FormScreen', { schema, formType, formName });
+    navigation.navigate("FormScreen", { schema, formType, formName });
   };
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
       <KeyboardAvoidingView
         style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
         keyboardVerticalOffset={80}
       >
         <ScrollView
@@ -118,16 +115,16 @@ const styles = StyleSheet.create({
   },
   textInput: {
     borderWidth: 1,
-    borderColor: '#ccc',
+    borderColor: "#ccc",
     padding: 8,
     borderRadius: 4,
   },
   dropdown: {
     borderWidth: 1,
-    borderColor: '#ccc',
+    borderColor: "#ccc",
   },
   dropdownContainer: {
     borderWidth: 1,
-    borderColor: '#ccc',
+    borderColor: "#ccc",
   },
 });
