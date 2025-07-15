@@ -1,18 +1,19 @@
 import React, { forwardRef, useImperativeHandle, useRef } from 'react';
-import { ScrollView, View, Button, Text } from 'react-native';
+import { Button, ScrollView, Text, View } from 'react-native';
 import { v4 as uuidv4 } from 'uuid';
-import { FieldRenderer } from './fields/FieldRenderer';
-import type { FormRendererRef, FormRendererProps } from './types';
-import { useFormState } from './hooks/useFormState';
-import { validateForm, getPhotoFields } from './hooks/useValidation';
-import { styles } from './styles';
 import { Collapsible } from '../Collapsible';
+import { FieldRenderer } from './fields/FieldRenderer';
+import { useFormState } from './hooks/useFormState';
+import { getPhotoFields, validateForm } from './hooks/useValidation';
+import { styles } from './styles';
+import type { FormRendererProps, FormRendererRef } from './types';
 
 export const FormRenderer = forwardRef<FormRendererRef, FormRendererProps>(
   ({ schema, initialData, readOnly }, ref) => {
     const {
       formState,
       formErrors,
+      setFormState,
       setFormErrors,
       instanceIds,
       setInstanceIds,
@@ -217,5 +218,5 @@ export const FormRenderer = forwardRef<FormRendererRef, FormRendererProps>(
 
 FormRenderer.displayName = 'FormRenderer';
 
-export { FormRendererRef, FormRendererProps } from './types';
+export { FormRendererProps, FormRendererRef } from './types';
 export default FormRenderer;

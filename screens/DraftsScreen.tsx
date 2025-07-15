@@ -5,12 +5,11 @@ import * as FileSystem from 'expo-file-system';
 import { useCallback, useState } from 'react';
 import {
   Alert,
-  Button,
   FlatList,
   Pressable,
   StyleSheet,
   TextInput,
-  View,
+  View
 } from 'react-native';
 
 import { ThemedText } from '@/components/ThemedText';
@@ -130,8 +129,9 @@ export default function DraftsScreen() {
   const renderItem = ({ item }: { item: DraftForm }) => (
     <View style={styles.draftItem}>
       <View style={styles.draftHeader}>
-        <ThemedText type="defaultSemiBold">{item.name}</ThemedText>
-        <Pressable
+        <ThemedText type="defaultSemiBold">Title: {item.name}</ThemedText>
+        <View style={styles.editButtons}>
+          <Pressable
           onPress={() => confirmDelete(item.id)}
           accessibilityLabel="Delete Draft"
           style={styles.deleteButton}>
@@ -141,11 +141,24 @@ export default function DraftsScreen() {
             color={Colors[colorScheme].tint}
           />
         </Pressable>
+        <Pressable
+          onPress={() => handleResume(item)}
+          accessibilityLabel="Edit"
+          style={styles.deleteButton}>
+          <MaterialIcons
+            name="edit"
+            size={20}
+            color={Colors[colorScheme].tint}
+          />
+        </Pressable>
+        </View>
       </View>
       <ThemedText style={styles.dateText}>
-        {new Date(item.createdAt).toLocaleDateString()}
+        Form Type: {item.formType}
       </ThemedText>
-      <Button title="Resume" onPress={() => handleResume(item)} />
+      <ThemedText style={styles.dateText}>
+        Date Created: {new Date(item.createdAt).toLocaleDateString()} {new Date(item.createdAt).toLocaleTimeString()}
+      </ThemedText>
     </View>
   );
 
@@ -227,11 +240,17 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#ccc',
     borderRadius: 8,
+    backgroundColor: '#dddddd'
   },
   draftHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+  },
+  editButtons: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    alignItems: 'flex-end',
   },
   deleteButton: {
     padding: 4,

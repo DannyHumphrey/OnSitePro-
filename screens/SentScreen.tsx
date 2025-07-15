@@ -1,11 +1,11 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { useCallback, useState } from 'react';
-import { FlatList, StyleSheet, TouchableOpacity } from 'react-native';
+import { FlatList, StyleSheet, TouchableOpacity, View } from 'react-native';
 
+import { StatusBadge } from '@/components/StatusBadge';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
-import { StatusBadge } from '@/components/StatusBadge';
 import type { FormSchema } from '@/components/formRenderer/fields/types';
 import { useFormCounts } from '@/context/FormCountsContext';
 
@@ -64,21 +64,26 @@ export default function SentScreen() {
 
   const renderItem = ({ item }: { item: SentForm }) => (
     <TouchableOpacity style={styles.item} onPress={() => handlePress(item)}>
-      <ThemedText type="defaultSemiBold">{item.name}</ThemedText>
-      <ThemedText>{item.formType}</ThemedText>
-      <ThemedText style={styles.dateText}>
-        Submitted {new Date(item.updatedAt).toLocaleDateString()}
-      </ThemedText>
-      {item.syncedAt && (
+      <View>
+        <View style={styles.header}>
+        <ThemedText type="defaultSemiBold">Title: {item.name}</ThemedText>
+        <StatusBadge
+          label={item.isSynced ? 'Synced' : 'Submitted'}
+          color={item.isSynced ? '#5cb85c' : '#0a7ea4'}
+        />
+        </View>
+        
+        <ThemedText>Form Type: {item.formType}</ThemedText>
         <ThemedText style={styles.dateText}>
-          Last synced at {new Date(item.syncedAt).toLocaleDateString()}
+          Submitted On: {new Date(item.updatedAt).toLocaleDateString()} {new Date(item.updatedAt).toLocaleTimeString()}
         </ThemedText>
-      )}
-      <StatusBadge
-        label={item.isSynced ? 'Synced' : 'Submitted'}
-        icon={item.isSynced ? '✅' : '🟢'}
-        color={item.isSynced ? '#5cb85c' : '#0a7ea4'}
-      />
+        {item.syncedAt && (
+          <ThemedText style={styles.dateText}>
+            Last synced at {new Date(item.syncedAt).toLocaleDateString()}
+          </ThemedText>
+        )}
+        
+      </View>
     </TouchableOpacity>
   );
 
@@ -111,12 +116,18 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
   item: {
     gap: 4,
     padding: 12,
     borderWidth: 1,
     borderColor: '#ccc',
     borderRadius: 8,
+    backgroundColor: '#d5ff87'
   },
   dateText: {
     marginBottom: 8,

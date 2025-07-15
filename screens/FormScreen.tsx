@@ -5,13 +5,13 @@ import {
   Alert,
   Button,
   Image,
-  Modal,
   KeyboardAvoidingView,
+  Modal,
   Platform,
   ScrollView,
   StyleSheet,
   TouchableOpacity,
-  View,
+  View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { v4 as uuidv4 } from 'uuid';
@@ -210,31 +210,48 @@ export default function FormScreen({ route, navigation }: Props) {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1 }}>
       <ThemedView style={{ flex: 1 }}>
         <KeyboardAvoidingView
           style={{ flex: 1 }}
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           keyboardVerticalOffset={80}
         >
-          <ScrollView
-            contentContainerStyle={styles.contentContainer}
-            keyboardShouldPersistTaps="handled"
-          >
-            {formName && (
-              <View style={styles.header}>
-                <ThemedText type="title" style={{ flex: 1 }}>
-                  {formName}
-                </ThemedText>
-                <TouchableOpacity onPress={() => setMenuVisible(true)}>
+          <View style={styles.buttonRow}>
+            <View style={styles.buttonWrapper}>
+              <Button title="Back" onPress={() => navigation.popToTop()} />
+            </View>
+            {!readOnly && (
+              <>
+                <View style={styles.buttonWrapper}>
+                  <Button title="Save" onPress={handleSaveDraft} />
+                </View>
+                <View style={styles.buttonWrapper}>
+                  <Button
+                    title="Submit"
+                    onPress={handleSubmitForm}
+                    color={Colors[colorScheme].tint}
+                    disabled={!isOnline}
+                  />
+                </View>
+              </>
+            )}
+            <TouchableOpacity onPress={() => setMenuVisible(true)}>
                   <IconSymbol
                     name="line.3.horizontal"
                     size={24}
                     color={Colors[colorScheme].text}
                   />
                 </TouchableOpacity>
+          </View>
+          <ScrollView
+            contentContainerStyle={styles.contentContainer}
+            keyboardShouldPersistTaps="handled"
+          >
+              <View style={styles.header}>
+                <ThemedText style={styles.title}>
+                  Title: {formName}
+                </ThemedText>
               </View>
-            )}
 
             {!isOnline && (
               <ThemedText style={styles.offlineText}>
@@ -248,26 +265,6 @@ export default function FormScreen({ route, navigation }: Props) {
               readOnly={readOnly}
             />
           </ScrollView>
-          <View style={styles.buttonRow}>
-            <View style={styles.buttonWrapper}>
-              <Button title="Back" onPress={() => navigation.popToTop()} />
-            </View>
-            {!readOnly && (
-              <>
-                <View style={styles.buttonWrapper}>
-                  <Button title="Save as Draft" onPress={handleSaveDraft} />
-                </View>
-                <View style={styles.buttonWrapper}>
-                  <Button
-                    title="Submit"
-                    onPress={handleSubmitForm}
-                    color={Colors[colorScheme].tint}
-                    disabled={!isOnline}
-                  />
-                </View>
-              </>
-            )}
-          </View>
         </KeyboardAvoidingView>
         <Modal
           transparent
@@ -325,7 +322,6 @@ export default function FormScreen({ route, navigation }: Props) {
           </SafeAreaView>
         </Modal>
       </ThemedView>
-    </SafeAreaView>
   );
 }
 
@@ -335,6 +331,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 16,
   },
+  title: {
+    fontWeight: 'bold',
+    flex: 1
+  },
   contentContainer: {
     padding: 16,
   },
@@ -342,8 +342,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     gap: 8,
-    padding: 16,
-    marginBottom: 30
+    padding: 16
   },
   buttonWrapper: {
     flex: 1,

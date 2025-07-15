@@ -1,17 +1,17 @@
-import DropDownPicker from 'react-native-dropdown-picker';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useState } from 'react';
 import {
   Button,
+  KeyboardAvoidingView,
+  Platform,
   SafeAreaView,
   ScrollView,
   StyleSheet,
   TextInput,
   View,
-  KeyboardAvoidingView,
-  Platform,
 } from 'react-native';
+import DropDownPicker from 'react-native-dropdown-picker';
 
 import type { FormSchema } from '@/components/formRenderer/fields/types';
 import { ThemedText } from '@/components/ThemedText';
@@ -27,99 +27,143 @@ export default function CreateFormScreen() {
   const [formType, setFormType] = useState<'demo'>('demo');
   const [open, setOpen] = useState(false);
 
-  const schema: FormSchema = [
-    {
-      key: 'personInvolved',
-      label: 'Person Involved',
-      fields: [
-        {
-          type: 'text',
-          label: 'Full Name',
-          key: 'fullName',
-          required: true,
-        },
-        {
-          type: 'text',
-          label: 'Job Title',
-          key: 'jobTitle',
-          visibleWhen: {
-            all: [{ key: 'personInvolved.fullName', notEquals: '' }]
-          }
-        },
-        { type: 'date', label: 'Date of Visit', key: 'visitDate' },
-        { type: 'photo', label: 'Take a Picture', key: 'photo' },
-        {
-          type: 'select',
-          label: 'Injury Severity',
-          key: 'injurySeverity',
-          options: [
-            { label: 'Minor', value: 'Minor' },
-            { label: 'Major', value: 'Major' },
-            { label: 'Severe', value: 'Severe' },
-            { label: 'Fatal', value: 'Fatal' }
-          ]
-        },
-        {
-          type: 'multiselect',
-          label: 'Injury Location',
-          key: 'injuryLocation',
-          options: [
-            'Head',
-            'Neck',
-            'Back',
-            'Chest',
-            'Abdomen',
-            'Pelvis',
-            'Upper Extremity',
-            'Lower Extremity',
-            'Other'
-          ]
-        },
-        {
-          type: 'number',
-          label: 'Number of people involved',
-          key: 'peopleCount'
+const schema: FormSchema = [
+  {
+    key: 'personInvolved',
+    label: 'Person Involved',
+    fields: [
+      {
+        type: 'text',
+        label: 'Full Name',
+        key: 'fullName',
+        required: true,
+      },
+      {
+        type: 'text',
+        label: 'Job Title',
+        key: 'jobTitle',
+        visibleWhen: {
+          all: [{ key: 'personInvolved.fullName', notEquals: '' }]
         }
-      ],
-    },
-    {
-      key: 'witnessStatements',
-      label: 'Witness Statement',
-      repeatable: true,
-      fields: [
-        { type: 'text', label: 'Name', key: 'name', required: true },
-        { type: 'text', label: 'Statement', key: 'statement' },
-        {
-          type: 'boolean',
-          label: 'Follow-up Required?',
-          key: 'followUpRequired',
-          visibleWhen: {
-            any: [{ key: 'statement', notEquals: '' }, { key: 'name', notEquals: '' }]
-          }
+      },
+      { type: 'date', label: 'Date of Visit', key: 'visitDate' },
+      { type: 'photo', label: 'Take a Picture', key: 'photo' },
+      {
+        type: 'select',
+        label: 'Injury Severity',
+        key: 'injurySeverity',
+        options: [
+          { label: 'Minor', value: 'Minor' },
+          { label: 'Major', value: 'Major' },
+          { label: 'Severe', value: 'Severe' },
+          { label: 'Fatal', value: 'Fatal' }
+        ]
+      },
+      {
+        type: 'multiselect',
+        label: 'Injury Location',
+        key: 'injuryLocation',
+        options: [
+          'Head',
+          'Neck',
+          'Back',
+          'Chest',
+          'Abdomen',
+          'Pelvis',
+          'Upper Extremity',
+          'Lower Extremity',
+          'Other'
+        ]
+      },
+      {
+        type: 'number',
+        label: 'Number of people involved',
+        key: 'peopleCount'
+      }
+    ],
+  },
+  {
+    key: 'witnessStatements',
+    label: 'Witness Statement',
+    repeatable: true,
+    fields: [
+      { type: 'text', label: 'Name', key: 'name', required: true },
+      { type: 'text', label: 'Statement', key: 'statement' },
+      {
+        type: 'boolean',
+        label: 'Follow-up Required?',
+        key: 'followUpRequired',
+        visibleWhen: {
+          any: [{ key: 'statement', notEquals: '' }, { key: 'name', notEquals: '' }]
         }
-      ],
-    },
-    {
-      key: 'signOff',
-      label: 'Sign Off',
-      fields: [
-        {
-          type: 'text',
-          label: 'Name of person signing off',
-          key: 'nameOfPersonSigningOff',
-          required: true,
-        },
-        {
-          type: 'text',
-          label: 'Job Title',
-          key: 'jobTitle',
-          visibleWhen: {
-            all: [{ key: 'signOff.nameOfPersonSigningOff', notEquals: '' }]
-          }
+      }
+    ],
+  },
+  {
+    key: 'signOff',
+    label: 'Sign Off',
+    fields: [
+      {
+        type: 'text',
+        label: 'Name of person signing off',
+        key: 'nameOfPersonSigningOff',
+        required: true,
+      },
+      {
+        type: 'text',
+        label: 'Job Title',
+        key: 'jobTitle',
+        visibleWhen: {
+          all: [{ key: 'signOff.nameOfPersonSigningOff', notEquals: '' }]
         }
-      ],
-    },
-  ];
+      }
+    ],
+  },
+  {
+    key: 'extraInputsDemo',
+    label: 'Extra Input Types Demo',
+    fields: [
+      {
+        type: 'currency',
+        label: 'Estimated Cost',
+        key: 'estimatedCost',
+        required: true,
+        currencySymbol: '£',
+      },
+      {
+        type: 'decimal',
+        label: 'Measured pH Level',
+        key: 'phLevel',
+      },
+      {
+        type: 'barcode',
+        label: 'Scan Barcode ID',
+        key: 'barcodeId',
+      },
+      {
+        type: 'time',
+        label: 'Time of Incident',
+        key: 'incidentTime',
+      },
+      {
+        type: 'datetime',
+        label: 'Date and Time Reported',
+        key: 'reportedAt',
+      },
+      {
+        type: 'imageSelect',
+        label: 'Attach Plan Diagram',
+        key: 'planDiagram',
+      },
+      {
+        type: 'signature',
+        label: 'Supervisor Signature',
+        key: 'supervisorSignature',
+      }
+    ]
+  }
+];
+
   
 
   const handleStart = () => {
