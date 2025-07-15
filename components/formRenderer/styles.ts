@@ -81,4 +81,7 @@ export const styles = StyleSheet.create({
     gap: 8,
     marginTop: 8,
   },
+  formTextInput: {
+    padding: 0
+  }
 });

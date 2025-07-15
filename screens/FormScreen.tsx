@@ -3,7 +3,6 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useEffect, useRef, useState } from 'react';
 import {
   Alert,
-  Button,
   Image,
   KeyboardAvoidingView,
   Modal,
@@ -21,6 +20,7 @@ import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { Colors } from '@/constants/Colors';
+import { spacing } from '@/constants/styles';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 import { DraftsStackParamList } from '@/navigation/types';
@@ -30,6 +30,8 @@ import {
   type DraftForm,
 } from '@/services/draftService';
 import React from 'react';
+import { Button } from 'react-native-paper';
+
 
 type OutboxForm = Omit<DraftForm, 'status'> & {
   status: 'complete';
@@ -218,20 +220,15 @@ export default function FormScreen({ route, navigation }: Props) {
         >
           <View style={styles.buttonRow}>
             <View style={styles.buttonWrapper}>
-              <Button title="Back" onPress={() => navigation.popToTop()} />
+              <Button onPress={() => navigation.popToTop()} mode='contained' style={styles.button}>Back</Button>
             </View>
             {!readOnly && (
               <>
                 <View style={styles.buttonWrapper}>
-                  <Button title="Save" onPress={handleSaveDraft} />
+                  <Button onPress={handleSaveDraft} mode='contained' style={styles.button}>Save</Button>
                 </View>
                 <View style={styles.buttonWrapper}>
-                  <Button
-                    title="Submit"
-                    onPress={handleSubmitForm}
-                    color={Colors[colorScheme].tint}
-                    disabled={!isOnline}
-                  />
+                  <Button onPress={handleSubmitForm} mode='contained' style={styles.button}>Submit</Button>
                 </View>
               </>
             )}
@@ -391,4 +388,9 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 8,
   },
+    button: {
+      marginTop: spacing.md,
+      backgroundColor: 'rgba(56,69,74,1)',
+      borderRadius: 3
+    },
 });

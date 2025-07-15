@@ -1,14 +1,15 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useEffect, useState } from 'react';
-import { Alert } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Button } from 'react-native-paper';
 import Constants from 'expo-constants';
+import { useEffect, useState } from 'react';
+import { Alert, Image, StyleSheet } from 'react-native';
+import { Button } from 'react-native-paper';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { ThemedView } from '@/components/ThemedView';
 import { ThemedText } from '@/components/ThemedText';
+import { ThemedView } from '@/components/ThemedView';
+import { spacing } from '@/constants/styles';
 import { RootStackParamList } from '@/navigation/types';
 import {
   getFormTemplatesRefreshDate,
@@ -56,6 +57,14 @@ export default function SettingsScreen() {
     <ThemedView
       style={{ flex: 1, padding: 16, justifyContent: 'space-between', alignItems: 'center' }}>
       <ThemedView style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                <ThemedView style={styles.logoContainer}>
+                    <Image
+                      source={require('@/assets/images/C365_Icon.png')}
+                      style={styles.logo}
+                      resizeMode="contain"
+                    />
+                  <ThemedText style={styles.logoText}>C365 OnSite Pro</ThemedText>
+                  </ThemedView>
         <ThemedText type="title" style={{ marginBottom: 16 }}>
           Settings
         </ThemedText>
@@ -73,3 +82,42 @@ export default function SettingsScreen() {
     </SafeAreaView>
   );
 }
+
+
+const styles = StyleSheet.create({
+  container: {
+    padding: spacing.md,
+    gap: spacing.md,
+    flexGrow: 1,
+    justifyContent: 'center',
+  },
+  logoContainer: {
+    alignItems: 'center',
+    marginBottom: spacing.lg,
+  },
+  logo: {
+    width: 50,
+    height: 50,
+  },
+  logoText: {
+    fontSize: 28,
+    marginTop: 15
+  },
+  fieldContainer: {
+    gap: spacing.sm,
+  },
+  textInput: {
+    marginTop: spacing.xs,
+  },
+  button: {
+    marginTop: spacing.md,
+    backgroundColor: 'rgba(56,69,74,1)',
+    borderRadius: 3
+  },
+  versionText: {
+    marginTop: spacing.lg,
+    fontSize: 12,
+    opacity: 0.6,
+    textAlign: 'center',
+  },
+});

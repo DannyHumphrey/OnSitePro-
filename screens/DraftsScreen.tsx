@@ -116,12 +116,6 @@ export default function DraftsScreen() {
         right={() => (
           <View style={styles.editButtons}>
             <IconButton
-              icon="pencil"
-              size={20}
-              onPress={() => handleResume(item)}
-              accessibilityLabel="Edit"
-            />
-            <IconButton
               icon="delete"
               size={20}
               onPress={() => confirmDelete(item.id)}

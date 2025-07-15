@@ -18,7 +18,7 @@ export function TextField({ field, value, onChange, error, readOnly, onLayout }:
     <View style={styles.fieldContainer} onLayout={onLayout}>
       <Text style={styles.label}>{field.label}</Text>
       <TextInput
-        style={[styles.textInput, error && styles.errorInput]}
+        style={[styles.textInput, error && styles.errorInput, styles.formTextInput]}
         value={value}
         editable={!readOnly}
         onChangeText={onChange}
