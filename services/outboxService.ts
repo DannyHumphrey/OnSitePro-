@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import jwtDecode from 'jwt-decode';
 import * as FileSystem from 'expo-file-system';
+import jwtDecode from 'jwt-decode';
 import type { DraftForm } from './draftService';
 
 export type OutboxForm =
@@ -106,14 +106,31 @@ export async function syncOutbox() {
         Address: `${form.data.Address1}, ${form.data.Address2}, ${form.data.Postcode}`.trim(),
         Name: form.name,
         StartedDateTime: form.createdAt,
-        SubmittedDateTime: '0001-01-01T00:00:00',
+        SubmittedDateTime: new Date(),
         Status: 0,
         SurveyCount: 1,
-        SyncedDateTime: null,
+        SyncedDateTime: new Date(),
         UserInfoId: Number((decoded as any).UserID),
         Id: 0,
         guid: form.id,
-        Surveys: [base64Data],
+        Surveys: [ {
+          Active: true,
+          FormData: JSON.stringify(base64Data),
+          "FormStatus": "QS_ReviewRequired",
+          "Id": 0,
+          "IsSubmit": true,
+          "IsSynced": false,
+          "LastSaved": "2025-07-17T19:37:14.206Z",
+          "Name": "React Test",
+          "StartedDateTime": "2025-07-17T20:36:13.863+01:00",
+          "Status": 0,
+          "SubmittedDateTime": "2025-07-17T20:37:43.092+01:00",
+          "SurveyType": 100,
+          "SurveyTypeText": "Magenta Minor Works (V1)",
+          "SyncedDateTime": "0001-01-01T00:00:00",
+          "guid": "6bedea5f-f0bc-476f-b6d1-c1380952528e",
+          "isSavingInstance": false
+        }],
       };
 
       const response = await fetch(SYNC_ENDPOINT, {

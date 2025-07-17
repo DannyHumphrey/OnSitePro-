@@ -17,7 +17,6 @@ import { v4 as uuidv4 } from "uuid";
 
 import FormRenderer, { type FormRendererRef } from '@/components/formRenderer';
 import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { Colors } from '@/constants/Colors';
 import { spacing } from '@/constants/styles';
@@ -29,7 +28,7 @@ import {
   type DraftForm,
 } from '@/services/draftService';
 import React from 'react';
-import { Button } from 'react-native-paper';
+import { Button } from "react-native-paper";
 
 
 type OutboxForm = Omit<DraftForm, "status"> & {
@@ -66,12 +65,21 @@ export default function FormScreen({ route, navigation }: Props) {
         return;
       }
       e.preventDefault();
-      Alert.alert("Exit Form", "Discard this form and go back?", [
+      Alert.alert("Exit Form", "Are you sure you want to exit?", [
         { text: "Cancel", style: "cancel" },
         {
-          text: "Discard",
+          text: "Exit",
           style: "destructive",
           onPress: () => {
+            allowExitRef.current = true;
+            navigation.dispatch(e.data.action);
+          },
+        },
+        {
+          text: "Save & Exit",
+          style: "default",
+          onPress: () => {
+            handleSaveDraft();
             allowExitRef.current = true;
             navigation.dispatch(e.data.action);
           },
@@ -238,31 +246,13 @@ export default function FormScreen({ route, navigation }: Props) {
   };
 
   return (
-    <ThemedView style={{ flex: 1 }}>
+    <SafeAreaView style={{ flex: 1 }}>
     <KeyboardAvoidingView
       style={{ flex: 1 }}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       keyboardVerticalOffset={80}
     >
       <View style={styles.buttonRow}>
-        <View style={styles.buttonWrapper}>
-          <Button title="Back" onPress={() => navigation.goBack()} />
-        </View>
-        {!readOnly && (
-          <>
-            <View style={styles.buttonWrapper}>
-              <Button title="Save" onPress={handleSaveDraft} />
-            </View>
-            <View style={styles.buttonWrapper}>
-              <Button
-                title="Submit"
-                onPress={handleSubmitForm}
-                color={Colors[colorScheme].tint}
-                disabled={!isOnline}
-              />
-            </View>
-          </>
-        )}
         <TouchableOpacity onPress={() => setMenuVisible(true)}>
           <IconSymbol
             name="line.3.horizontal"
@@ -292,6 +282,27 @@ export default function FormScreen({ route, navigation }: Props) {
           />
         </ScrollView>
       </KeyboardAvoidingView>
+      <View style={styles.buttonRow}>
+        <View style={styles.buttonWrapper}>
+          <Button onPress={() => navigation.goBack()} mode='contained'>Back</Button>
+        </View>
+        {!readOnly && (
+          <>
+            <View style={styles.buttonWrapper}>
+              <Button onPress={handleSaveDraft} mode='contained'>Save</Button>
+            </View>
+            <View style={styles.buttonWrapper}>
+              <Button
+                onPress={handleSubmitForm}
+                disabled={!isOnline}
+                mode='contained'
+              >
+                Submit
+              </Button>
+            </View>
+          </>
+        )}
+      </View>
       <Modal
         transparent
         animationType="slide"
@@ -359,7 +370,7 @@ export default function FormScreen({ route, navigation }: Props) {
           </View>
         </SafeAreaView>
       </Modal>
-    </ThemedView>
+    </SafeAreaView>
   );
 }
 

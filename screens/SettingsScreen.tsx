@@ -100,7 +100,7 @@ const styles = StyleSheet.create({
     height: 50,
   },
   logoText: {
-    fontSize: 28,
+    fontSize: 15,
     marginTop: 15
   },
   fieldContainer: {
