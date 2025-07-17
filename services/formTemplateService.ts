@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { FormSchema } from '@/components/formRenderer/fields/types';
+import { getToken } from './authService';
 
 export type FormTemplate = {
   id: string;
@@ -13,7 +14,7 @@ const TIMESTAMP_KEY = 'cached_form_types_timestamp';
 const CACHE_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 
 async function fetchFromApi(): Promise<FormTemplate[]> {
-  const token = await AsyncStorage.getItem('auth:token');
+  const token = await getToken();
   const response = await fetch(API_ENDPOINT, {
     headers: token ? { Authorization: `Bearer ${token}` } : undefined,
   });
