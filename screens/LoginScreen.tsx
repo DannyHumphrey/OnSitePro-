@@ -17,8 +17,10 @@ import { Button, Checkbox, TextInput } from 'react-native-paper';
 
 import { spacing } from '@/constants/styles';
 import {
+  attemptOfflineLogin,
   clearUsername,
   getSavedUsername,
+  saveOfflineLoginKey,
   saveToken,
   saveUsername,
 } from '@/services/authService';
@@ -61,6 +63,10 @@ export default function LoginScreen({ onLogin }: Props) {
       );
 
       if (!response.ok) {
+        if (response.status === 401) {
+          Alert.alert('Invalid Login', 'Username or password is incorrect.');
+          return;
+        }
         throw new Error('Request failed');
       }
 
@@ -68,6 +74,7 @@ export default function LoginScreen({ onLogin }: Props) {
 
       if (data.token) {
         await saveToken(data.token);
+        await saveOfflineLoginKey(username, password);
         if (rememberMe) {
           await saveUsername(username);
         } else {
@@ -75,11 +82,21 @@ export default function LoginScreen({ onLogin }: Props) {
         }
         onLogin();
         navigation.replace('MainTabs');
-      } else {
-        Alert.alert('Invalid Login', 'Username or password is incorrect.');
+        return;
       }
+
+      Alert.alert('Invalid Login', 'Username or password is incorrect.');
     } catch (error) {
-      Alert.alert('Login Failed', 'An unexpected error occurred.');
+      const offline = await attemptOfflineLogin(username, password);
+      if (offline) {
+        if (offline.expired) {
+          Alert.alert('Offline Login', 'Token expired. Limited offline session.');
+        }
+        onLogin();
+        navigation.replace('MainTabs');
+      } else {
+        Alert.alert('Login Failed', 'An unexpected error occurred.');
+      }
     }
   };
 

@@ -1,4 +1,4 @@
-import { getToken } from "@/services/authService";
+import { getValidToken } from "@/services/authService";
 import {
   NavigationContainer,
   DarkTheme as NavigationDarkTheme,
@@ -87,7 +87,7 @@ export default function App() {
   useEffect(() => {
     async function loadStatus() {
       try {
-        const token = await getToken();
+        const token = await getValidToken();
         setIsLoggedIn(!!token);
       } catch {
         setIsLoggedIn(false);
