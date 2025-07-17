@@ -1,13 +1,16 @@
-import { getValidToken } from "@/services/authService";
+import { getValidToken, signOut } from "@/services/authService";
 import {
   NavigationContainer,
   DarkTheme as NavigationDarkTheme,
   DefaultTheme as NavigationDefaultTheme,
 } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import { useEffect, useState } from "react";
-import { ActivityIndicator, View } from "react-native";
-import { BottomNavigation, PaperProvider } from "react-native-paper";
+import { useEffect, useRef, useState } from "react";
+import { ActivityIndicator, View, Modal, StyleSheet, Text } from "react-native";
+import { BottomNavigation, PaperProvider, Button } from "react-native-paper";
+import NetInfo from "@react-native-community/netinfo";
+import * as SecureStore from "expo-secure-store";
+import jwtDecode from "jwt-decode";
 
 import { darkTheme, lightTheme } from "@/constants/theme";
 import { FormCountsProvider, useFormCounts } from "@/context/FormCountsContext";
@@ -40,6 +43,24 @@ function DraftsTabNavigator() {
     </DraftsStack.Navigator>
   );
 }
+
+const styles = StyleSheet.create({
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  modalContent: {
+    padding: 24,
+    borderRadius: 4,
+    alignItems: 'center',
+    width: '80%',
+  },
+  modalText: {
+    textAlign: 'center',
+  },
+});
 
 function MainTabNavigator() {
   const { counts } = useFormCounts();
@@ -83,6 +104,8 @@ function MainTabNavigator() {
 export default function App() {
   const colorScheme = useColorScheme();
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
+  const [sessionExpired, setSessionExpired] = useState(false);
+  const wasOffline = useRef(false);
 
   useEffect(() => {
     async function loadStatus() {
@@ -95,6 +118,33 @@ export default function App() {
     }
     loadStatus();
   }, []);
+
+  useEffect(() => {
+    const unsubscribe = NetInfo.addEventListener(async (state) => {
+      const online = state.isConnected && state.isInternetReachable !== false;
+      if (online && wasOffline.current) {
+        const token = await SecureStore.getItemAsync("auth:token");
+        if (token) {
+          try {
+            const { exp } = jwtDecode<{ exp: number }>(token);
+            if (typeof exp === "number" && exp * 1000 <= Date.now()) {
+              setSessionExpired(true);
+            }
+          } catch {
+            setSessionExpired(true);
+          }
+        }
+      }
+      wasOffline.current = !online;
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const handleSessionExpired = async () => {
+    await signOut();
+    setSessionExpired(false);
+    setIsLoggedIn(false);
+  };
 
   useEffect(() => {
     cleanupOldSentForms()
@@ -120,6 +170,7 @@ export default function App() {
     <FormCountsProvider>
       <PaperProvider theme={paperTheme}>
         <NavigationContainer
+          key={isLoggedIn ? "logged-in" : "logged-out"}
           theme={{
             ...navigationTheme,
             colors: {
@@ -153,6 +204,23 @@ export default function App() {
               options={{ title: "Form" }}
             />
           </RootStack.Navigator>
+          <Modal transparent visible={sessionExpired} animationType="fade">
+            <View style={styles.modalOverlay}>
+              <View
+                style={[
+                  styles.modalContent,
+                  { backgroundColor: paperTheme.colors.background },
+                ]}
+              >
+                <Text style={styles.modalText}>
+                  Session expired. Please log in again
+                </Text>
+                <Button mode="contained" onPress={handleSessionExpired} style={{marginTop:16}}>
+                  Login
+                </Button>
+              </View>
+            </View>
+          </Modal>
         </NavigationContainer>
       </PaperProvider>
     </FormCountsProvider>
