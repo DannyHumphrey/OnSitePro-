@@ -1,4 +1,4 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { getToken } from "@/services/authService";
 import {
   NavigationContainer,
   DarkTheme as NavigationDarkTheme,
@@ -87,8 +87,8 @@ export default function App() {
   useEffect(() => {
     async function loadStatus() {
       try {
-        const value = await AsyncStorage.getItem("auth:isLoggedIn");
-        setIsLoggedIn(value === "true");
+        const token = await getToken();
+        setIsLoggedIn(!!token);
       } catch {
         setIsLoggedIn(false);
       }

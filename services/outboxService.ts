@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as FileSystem from 'expo-file-system';
 import jwtDecode from 'jwt-decode';
+import { getToken } from './authService';
 import type { DraftForm } from './draftService';
 
 export type OutboxForm =
@@ -87,7 +88,7 @@ export async function syncOutbox() {
       const item = await AsyncStorage.getItem(`outbox:${id}`);
       if (!item) continue;
       const form = JSON.parse(item) as OutboxForm;
-      const token = await AsyncStorage.getItem('auth:token');
+      const token = await getToken();
       if (!token) throw new Error('Missing auth token');
 
       const decoded = jwtDecode<{ UserID: string }>(token);

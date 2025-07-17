@@ -1,10 +1,9 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Constants from 'expo-constants';
 import { useEffect, useState } from 'react';
-import { Alert, Image, StyleSheet } from 'react-native';
-import { Button } from 'react-native-paper';
+import { Alert, Image, StyleSheet, View } from 'react-native';
+import { Button, Switch } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/ThemedText';
@@ -15,12 +14,14 @@ import {
   getFormTemplatesRefreshDate,
   refreshFormTemplates,
 } from '@/services/formTemplateService';
+import { clearUsername, signOut } from '@/services/authService';
 
 export default function SettingsScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const appVersion =
     Constants.expoConfig?.version ?? Constants.manifest?.version ?? 'unknown';
   const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
+  const [forgetMe, setForgetMe] = useState(false);
 
   useEffect(() => {
     getFormTemplatesRefreshDate().then(setLastRefresh);
@@ -33,8 +34,7 @@ export default function SettingsScreen() {
         text: 'Logout',
         style: 'destructive',
         onPress: async () => {
-          await AsyncStorage.removeItem('auth:isLoggedIn');
-          await AsyncStorage.removeItem('auth:token');
+          await signOut();
           navigation.replace('Login');
         },
       },
@@ -49,6 +49,14 @@ export default function SettingsScreen() {
       Alert.alert('Success', 'Form types refreshed');
     } catch (err) {
       Alert.alert('Error', 'Failed to refresh form types');
+    }
+  };
+
+  const handleForgetToggle = async (val: boolean) => {
+    setForgetMe(val);
+    if (val) {
+      await clearUsername();
+      setForgetMe(false);
     }
   };
 
@@ -75,6 +83,10 @@ export default function SettingsScreen() {
         <Button mode="outlined" style={{ marginBottom: 24 }} onPress={handleRefreshTemplates}>
           Refresh Form Types
         </Button>
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 24 }}>
+          <Switch value={forgetMe} onValueChange={handleForgetToggle} />
+          <ThemedText style={{ marginLeft: 8 }}>Forget Me</ThemedText>
+        </View>
         <Button mode="outlined" onPress={handleLogout}>Logout</Button>
       </ThemedView>
       <ThemedText style={{ color: '#888' }}>App version {appVersion}</ThemedText>

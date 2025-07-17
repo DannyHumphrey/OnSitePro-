@@ -1,8 +1,7 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Constants from 'expo-constants';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Alert,
   Image,
@@ -14,9 +13,15 @@ import {
   Text,
   View,
 } from 'react-native';
-import { Button, TextInput } from 'react-native-paper';
+import { Button, Checkbox, TextInput } from 'react-native-paper';
 
 import { spacing } from '@/constants/styles';
+import {
+  clearUsername,
+  getSavedUsername,
+  saveToken,
+  saveUsername,
+} from '@/services/authService';
 import { RootStackParamList } from '@/navigation/types';
 
 type Props = { onLogin: () => void };
@@ -27,8 +32,18 @@ export default function LoginScreen({ onLogin }: Props) {
 
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(false);
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+
+  useEffect(() => {
+    getSavedUsername().then((name) => {
+      if (name) {
+        setUsername(name);
+        setRememberMe(true);
+      }
+    });
+  }, []);
 
   const handleLogin = async () => {
     try {
@@ -52,8 +67,12 @@ export default function LoginScreen({ onLogin }: Props) {
       const data = (await response.json()) as { token?: string };
 
       if (data.token) {
-        await AsyncStorage.setItem('auth:token', data.token);
-        await AsyncStorage.setItem('auth:isLoggedIn', 'true');
+        await saveToken(data.token);
+        if (rememberMe) {
+          await saveUsername(username);
+        } else {
+          await clearUsername();
+        }
         onLogin();
         navigation.replace('MainTabs');
       } else {
@@ -91,19 +110,26 @@ export default function LoginScreen({ onLogin }: Props) {
             />
           </View>
           <View style={styles.fieldContainer}>
-            <TextInput
-              placeholder="Password"
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
-              style={styles.textInput}
-              mode='outlined'
-              label='Password'
-            />
-          </View>
-          <Button mode="contained" onPress={handleLogin} style={styles.button}>
-            Log In
-          </Button>
+          <TextInput
+            placeholder="Password"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+            style={styles.textInput}
+            mode='outlined'
+            label='Password'
+          />
+        </View>
+        <View style={styles.rememberContainer}>
+          <Checkbox
+            status={rememberMe ? 'checked' : 'unchecked'}
+            onPress={() => setRememberMe(!rememberMe)}
+          />
+          <Text>Remember Me</Text>
+        </View>
+        <Button mode="contained" onPress={handleLogin} style={styles.button}>
+          Log In
+        </Button>
           <Text style={styles.versionText}>© {new Date().getFullYear()} C365 Cloud all rights reserved</Text>
           <Text style={styles.versionText}>v{appVersion}</Text>
         </ScrollView>
@@ -141,6 +167,11 @@ const styles = StyleSheet.create({
     marginTop: spacing.md,
     backgroundColor: 'rgba(56,69,74,1)',
     borderRadius: 3
+  },
+  rememberContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
   },
   versionText: {
     marginTop: spacing.lg,
