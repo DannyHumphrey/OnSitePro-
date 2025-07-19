@@ -1,11 +1,11 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
-import jwtDecode from 'jwt-decode';
 import { sha256 } from 'js-sha256';
+import jwtDecode from 'jwt-decode';
 
-const TOKEN_KEY = 'auth:token';
+const TOKEN_KEY = 'auth.token';
 const USER_KEY = 'auth:username';
-const OFFLINE_KEY = 'auth:offlineKey';
+const OFFLINE_KEY = 'auth.offlineKey';
 
 export async function saveToken(token: string) {
   await SecureStore.setItemAsync(TOKEN_KEY, token);
@@ -48,8 +48,6 @@ export async function getToken(): Promise<string | null> {
 }
 
 export async function signOut() {
-  await SecureStore.deleteItemAsync(TOKEN_KEY);
-  await SecureStore.deleteItemAsync(OFFLINE_KEY);
   await AsyncStorage.removeItem('auth:isLoggedIn');
 }
 
