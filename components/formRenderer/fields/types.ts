@@ -57,7 +57,7 @@ export type FormField =
       type: 'multiselect';
       label: string;
       key: string;
-      options: string[];
+      options: string[] | { label: string; value: string }[];
       required?: boolean;
       visibleWhen?: VisibleWhen;
     };
