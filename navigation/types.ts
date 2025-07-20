@@ -25,4 +25,9 @@ export type RootStackParamList = {
     draftId?: string;
     readOnly?: boolean;
   };
+  EmbeddedFormScreen: {
+    user?: string;
+    survey?: string;
+    readOnly?: boolean | string;
+  };
 };
