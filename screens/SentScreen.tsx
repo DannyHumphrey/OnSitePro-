@@ -11,7 +11,7 @@ import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { spacing } from '@/constants/styles';
 import { useFormCounts } from '@/context/FormCountsContext';
-import { DraftsStackParamList } from '@/navigation/types';
+import { RootStackParamList } from '@/navigation/types';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 export type SentForm = {
@@ -27,7 +27,7 @@ export type SentForm = {
 
 export default function SentScreen() { 
   const navigation = useNavigation<
-      NativeStackNavigationProp<DraftsStackParamList>
+      NativeStackNavigationProp<RootStackParamList>
     >();
   const [forms, setForms] = useState<SentForm[]>([]);
   const { setCounts } = useFormCounts();

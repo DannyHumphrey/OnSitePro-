@@ -20,6 +20,7 @@ import { Colors } from '@/constants/Colors';
 import { spacing } from '@/constants/styles';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
+import { RootStackParamList } from "@/navigation/types";
 import {
   getDraftById,
   saveDraft,
