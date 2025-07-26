@@ -3,14 +3,12 @@ import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useEffect, useRef, useState } from "react";
 import {
   Alert,
-  Image,
   KeyboardAvoidingView,
-  Modal,
   Platform,
   ScrollView,
   StyleSheet,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { v4 as uuidv4 } from "uuid";
@@ -28,7 +26,7 @@ import {
   type DraftForm,
 } from '@/services/draftService';
 import React from 'react';
-import { Button } from "react-native-paper";
+import { Button, Modal, PaperProvider } from "react-native-paper";
 
 
 type OutboxForm = Omit<DraftForm, "status"> & {
@@ -246,6 +244,7 @@ export default function FormScreen({ route, navigation }: Props) {
   };
 
   return (
+    <PaperProvider>
     <SafeAreaView style={{ flex: 1 }}>
     <KeyboardAvoidingView
       style={{ flex: 1 }}
@@ -284,17 +283,18 @@ export default function FormScreen({ route, navigation }: Props) {
       </KeyboardAvoidingView>
       <View style={styles.buttonRow}>
         <View style={styles.buttonWrapper}>
-          <Button onPress={() => navigation.goBack()} mode='contained'>Back</Button>
+          <Button style={styles.button} onPress={() => navigation.goBack()} mode='contained'>Back</Button>
         </View>
         {!readOnly && (
           <>
             <View style={styles.buttonWrapper}>
-              <Button onPress={handleSaveDraft} mode='contained'>Save</Button>
+              <Button style={styles.button} onPress={handleSaveDraft} mode='contained'>Save</Button>
             </View>
             <View style={styles.buttonWrapper}>
               <Button
                 onPress={handleSubmitForm}
                 disabled={!isOnline}
+                style={styles.button}
                 mode='contained'
               >
                 Submit
@@ -303,13 +303,11 @@ export default function FormScreen({ route, navigation }: Props) {
           </>
         )}
       </View>
-      <Modal
-        transparent
-        animationType="slide"
+    </SafeAreaView>
+    <Modal
         visible={menuVisible}
-        onRequestClose={() => setMenuVisible(false)}
+        onDismiss={() => setMenuVisible(false)}
       >
-        <SafeAreaView style={styles.modalOverlay}>
           <View
             style={[
               styles.drawer,
@@ -368,9 +366,8 @@ export default function FormScreen({ route, navigation }: Props) {
               </ScrollView>
             )}
           </View>
-        </SafeAreaView>
       </Modal>
-    </SafeAreaView>
+    </PaperProvider>
   );
 }
 
@@ -440,9 +437,9 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginBottom: 8,
   },
-    button: {
-      marginTop: spacing.md,
-      backgroundColor: 'rgba(56,69,74,1)',
-      borderRadius: 3
-    },
+  button: {
+    marginTop: spacing.md,
+    backgroundColor: 'rgba(56,69,74,1)',
+    borderRadius: 3
+  },
 });

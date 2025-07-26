@@ -49,9 +49,12 @@ export function Collapsible({
   return (
     <ThemedView onLayout={onLayout}>
       <TouchableOpacity
-        style={[styles.heading, hasError && styles.errorHeading]}
+        style={[styles.heading, hasError && styles.errorHeading, !isOpen && styles.headingClosed]}
         onPress={toggle}
         activeOpacity={0.8}>
+
+        <ThemedText type="defaultSemiBold">{title}</ThemedText>
+
         <IconSymbol
           name="chevron.right"
           size={18}
@@ -59,10 +62,28 @@ export function Collapsible({
           color={theme === 'light' ? Colors.light.icon : Colors.dark.icon}
           style={{ transform: [{ rotate: isOpen ? '90deg' : '0deg' }] }}
         />
-
-        <ThemedText type="defaultSemiBold">{title}</ThemedText>
       </TouchableOpacity>
-      {isOpen && <ThemedView style={styles.content}>{children}</ThemedView>}
+      {isOpen && 
+        <>
+
+        <ThemedView style={[styles.content, hasError && styles.errorHeading]}>{children}</ThemedView>
+        
+        <TouchableOpacity
+        style={[styles.footer, hasError && styles.errorHeading]}
+        onPress={toggle}
+        activeOpacity={0.8}>
+
+          <ThemedText type="defaultSemiBold">{title}</ThemedText>
+
+          <IconSymbol
+            name="chevron.right"
+            size={18}
+            weight="medium"
+            color={theme === 'light' ? Colors.light.icon : Colors.dark.icon}
+            style={{ transform: [{ rotate: '-90deg' }] }}
+          />
+        </TouchableOpacity>
+        </>}
     </ThemedView>
   );
 }
@@ -72,15 +93,41 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
+    display: 'flex',
+    justifyContent: 'space-between',
+    backgroundColor: '#e2e7e9',
+    padding: 15,
+    borderRadius: 0,
+    borderColor: '#637a83',
+    borderTopWidth: 1,
+    borderLeftWidth: 1,
+    borderRightWidth: 1
+  },
+  headingClosed: {
+    borderBottomWidth: 1
+  },
+  footer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    display: 'flex',
+    justifyContent: 'space-between',
+    backgroundColor: '#e2e7e9',
+    padding: 5,
+    paddingLeft: 15,
+    paddingRight: 15,
+    borderColor: '#637a83',
+    borderLeftWidth: 1,
+    borderRightWidth: 1,
+    borderBottomWidth: 1
   },
   errorHeading: {
-    borderWidth: 1,
     borderColor: 'red',
-    borderRadius: 4,
-    padding: 4,
   },
   content: {
-    marginTop: 6,
-    marginLeft: 24,
-  },
+    borderColor: '#637a83',
+    borderLeftWidth: 1,
+    borderRightWidth: 1,
+    padding: 5
+  }
 });

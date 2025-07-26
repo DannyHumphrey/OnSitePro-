@@ -13,6 +13,10 @@ export const styles = StyleSheet.create({
     marginTop: 10
   },
   textInput: {
+    padding: 0,
+    borderColor: 'rgb(209, 213, 219)',
+    borderWidth: 0,
+    backgroundColor: 'white'
   },
   dropdown: {
     borderWidth: 1,

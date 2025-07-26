@@ -63,6 +63,7 @@ export async function clearUsername() {
   await AsyncStorage.removeItem(USER_KEY);
 }
 
+
 export async function attemptOfflineLogin(
   username: string,
   password: string

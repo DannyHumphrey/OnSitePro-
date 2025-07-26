@@ -2,29 +2,30 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Constants from 'expo-constants';
 import { useEffect, useState } from 'react';
-import { Alert, Image, StyleSheet, View } from 'react-native';
-import { Button, Switch } from 'react-native-paper';
+import { Alert, Image, StyleSheet } from 'react-native';
+import { Button } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { spacing } from '@/constants/styles';
 import { RootStackParamList } from '@/navigation/types';
+import { clearUsername, getSavedUsername, signOut } from '@/services/authService';
 import {
   getFormTemplatesRefreshDate,
   refreshFormTemplates,
 } from '@/services/formTemplateService';
-import { clearUsername, signOut } from '@/services/authService';
 
 export default function SettingsScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const appVersion =
     Constants.expoConfig?.version ?? Constants.manifest?.version ?? 'unknown';
   const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
-  const [forgetMe, setForgetMe] = useState(false);
+  const [disableForget, setDisableForget] = useState(false);
 
   useEffect(() => {
     getFormTemplatesRefreshDate().then(setLastRefresh);
+    setDisableForget(getSavedUsername() === null)
   }, []);
 
   const handleLogout = () => {
@@ -52,12 +53,9 @@ export default function SettingsScreen() {
     }
   };
 
-  const handleForgetToggle = async (val: boolean) => {
-    setForgetMe(val);
-    if (val) {
+  const handleForgetMe = async () => {
       await clearUsername();
-      setForgetMe(false);
-    }
+      setDisableForget(false)
   };
 
   return (
@@ -76,17 +74,14 @@ export default function SettingsScreen() {
         <ThemedText type="title" style={{ marginBottom: 16 }}>
           Settings
         </ThemedText>
-        <ThemedText style={{ marginBottom: 8 }}>
-          Form types last refreshed:{' '}
-          {lastRefresh ? lastRefresh.toLocaleString() : 'never'}
-        </ThemedText>
-        <Button mode="outlined" style={{ marginBottom: 24 }} onPress={handleRefreshTemplates}>
+        <Button mode="outlined" onPress={handleRefreshTemplates}>
           Refresh Form Types
         </Button>
-        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 24 }}>
-          <Switch value={forgetMe} onValueChange={handleForgetToggle} />
-          <ThemedText style={{ marginLeft: 8 }}>Forget Me</ThemedText>
-        </View>
+        <ThemedText style={{ marginBottom: 24 }}>
+          Last refreshed:{' '}
+          {lastRefresh ? lastRefresh.toLocaleString() : 'never'}
+        </ThemedText>
+        <Button mode="outlined" onPress={handleForgetMe} disabled={disableForget} style={{ marginBottom: 8 }}>Forget Me</Button>
         <Button mode="outlined" onPress={handleLogout}>Logout</Button>
       </ThemedView>
       <ThemedText style={{ color: '#888' }}>App version {appVersion}</ThemedText>
