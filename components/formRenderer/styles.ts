@@ -87,5 +87,17 @@ export const styles = StyleSheet.create({
   },
   formTextInput: {
     padding: 0
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: 'white',
+    padding: 20,
+    width: '80%',
+    gap: 12,
   }
 });

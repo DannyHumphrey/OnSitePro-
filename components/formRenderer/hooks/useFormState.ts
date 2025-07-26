@@ -91,6 +91,19 @@ export function useFormState(schema: FormSchema, initialData?: Record<string, an
     });
     return ids;
   });
+  const [instanceNames, setInstanceNames] = useState<Record<string, string[]>>(() => {
+    const names: Record<string, string[]> = {};
+    schema.forEach((section) => {
+      if (section.repeatable) {
+        const length = ((initialData?.[section.key] as any[]) ?? []).length;
+        names[section.key] = Array.from(
+          { length },
+          (_, i) => `${section.label} ${i + 1}`,
+        );
+      }
+    });
+    return names;
+  });
   const [activeDateKey, setActiveDateKey] = useState<string | null>(null);
 
   const buildExpandedState = () => {
@@ -124,6 +137,19 @@ export function useFormState(schema: FormSchema, initialData?: Record<string, an
         });
         return ids;
       });
+      setInstanceNames(() => {
+        const names: Record<string, string[]> = {};
+        schema.forEach((section) => {
+          if (section.repeatable) {
+            const length = ((initialData?.[section.key] as any[]) ?? []).length;
+            names[section.key] = Array.from(
+              { length },
+              (_, i) => `${section.label} ${i + 1}`,
+            );
+          }
+        });
+        return names;
+      });
       setExpandedSections(buildExpandedState());
       setErroredSections({});
     }
@@ -147,6 +173,8 @@ export function useFormState(schema: FormSchema, initialData?: Record<string, an
     setFormErrors,
     instanceIds,
     setInstanceIds,
+    instanceNames,
+    setInstanceNames,
     activeDateKey,
     setActiveDateKey,
     expandedSections,
