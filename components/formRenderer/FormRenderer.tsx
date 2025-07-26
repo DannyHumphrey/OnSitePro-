@@ -232,6 +232,19 @@ export const FormRenderer = forwardRef<FormRendererRef, FormRendererProps>(
                 }}
               >
                 <View style={styles.sectionContent}>
+                  <View style={styles.repeatableActions}>
+                    <Button
+                      title="Rename"
+                      onPress={() => {
+                        setRenameValue(
+                          instanceNames[section.key]?.[idx] ?? `${section.label} ${idx + 1}`,
+                        );
+                        setRenameInfo({ key: section.key, idx });
+                      }}
+                    />
+                    <Button title="Copy" onPress={() => cloneSection(section.key, idx)} />
+                    <Button title="Remove" onPress={() => removeSection(section.key, idx)} />
+                  </View>
                   {section.fields.map((f) => (
                     <FieldRenderer
                       key={`${section.key}-${idx}-${f.key}`}
@@ -249,12 +262,6 @@ export const FormRenderer = forwardRef<FormRendererRef, FormRendererProps>(
                       readOnly={readOnly}
                     />
                   ))}
-                  <Button title="Rename" onPress={() => {
-                    setRenameValue(instanceNames[section.key]?.[idx] ?? `${section.label} ${idx + 1}`);
-                    setRenameInfo({ key: section.key, idx });
-                  }} />
-                  <Button title="Copy" onPress={() => cloneSection(section.key, idx)} />
-                  <Button title="Remove" onPress={() => removeSection(section.key, idx)} />
                 </View>
               </Collapsible>
             ))}

@@ -85,6 +85,12 @@ export const styles = StyleSheet.create({
     gap: 8,
     marginTop: 8,
   },
+  repeatableActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    gap: 8,
+  },
   formTextInput: {
     padding: 0
   },
