@@ -9,6 +9,7 @@ import { useEffect, useRef, useState } from "react";
 import { ActivityIndicator, View, Modal, StyleSheet, Text } from "react-native";
 import { BottomNavigation, PaperProvider, Button } from "react-native-paper";
 import NetInfo from "@react-native-community/netinfo";
+import * as Linking from "expo-linking";
 import * as SecureStore from "expo-secure-store";
 import jwtDecode from "jwt-decode";
 
@@ -28,6 +29,7 @@ import OutboxScreen from "@/screens/OutboxScreen";
 import SentScreen from "@/screens/SentScreen";
 import SettingsScreen from "@/screens/SettingsScreen";
 import { cleanupOldSentForms } from "@/services/sentService";
+import EmbeddedFormScreen from "@/screens/EmbeddedFormScreen";
 
 const RootStack = createNativeStackNavigator<RootStackParamList>();
 const DraftsStack = createNativeStackNavigator<DraftsStackParamList>();
@@ -146,6 +148,15 @@ export default function App() {
     setIsLoggedIn(false);
   };
 
+  const linking = {
+    prefixes: [Linking.createURL('/')],
+    config: {
+      screens: {
+        EmbeddedFormScreen: 'embedded-form',
+      },
+    },
+  };
+
   useEffect(() => {
     cleanupOldSentForms()
       .then((count) => {
@@ -171,6 +182,7 @@ export default function App() {
       <PaperProvider theme={paperTheme}>
         <NavigationContainer
           key={isLoggedIn ? "logged-in" : "logged-out"}
+          linking={linking}
           theme={{
             ...navigationTheme,
             colors: {
@@ -202,6 +214,11 @@ export default function App() {
               name="FormScreen"
               component={FormScreen}
               options={{ title: "Form" }}
+            />
+            <RootStack.Screen
+              name="EmbeddedFormScreen"
+              component={EmbeddedFormScreen}
+              options={{ headerShown: false }}
             />
           </RootStack.Navigator>
           <Modal transparent visible={sessionExpired} animationType="fade">
