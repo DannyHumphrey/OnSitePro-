@@ -1,5 +1,5 @@
-import React, { forwardRef, useImperativeHandle, useRef } from 'react';
-import { Button, ScrollView, Text, View } from 'react-native';
+import React, { forwardRef, useImperativeHandle, useRef, useState } from 'react';
+import { Button, ScrollView, Text, View, Modal, TextInput, TouchableOpacity } from 'react-native';
 import { v4 as uuidv4 } from 'uuid';
 import { Collapsible } from '../Collapsible';
 import { FieldRenderer } from './fields/FieldRenderer';
@@ -17,6 +17,8 @@ export const FormRenderer = forwardRef<FormRendererRef, FormRendererProps>(
       setFormErrors,
       instanceIds,
       setInstanceIds,
+      instanceNames,
+      setInstanceNames,
       activeDateKey,
       setActiveDateKey,
       expandedSections,
@@ -30,6 +32,8 @@ export const FormRenderer = forwardRef<FormRendererRef, FormRendererProps>(
     const scrollRef = useRef<ScrollView>(null);
     const sectionPositions = useRef<Record<string, number>>({});
     const fieldPositions = useRef<Record<string, number>>({});
+    const [renameInfo, setRenameInfo] = useState<{ key: string; idx: number } | null>(null);
+    const [renameValue, setRenameValue] = useState('');
 
     useImperativeHandle(ref, () => ({
       getFormData: () => formState,
@@ -78,6 +82,13 @@ export const FormRenderer = forwardRef<FormRendererRef, FormRendererProps>(
         const ids = prev[sectionKey] ?? [];
         return { ...prev, [sectionKey]: [...ids, uuidv4()] };
       });
+      setInstanceNames((prev) => {
+        const names = prev[sectionKey] ?? [];
+        return {
+          ...prev,
+          [sectionKey]: [...names, `${schema.find((s) => s.key === sectionKey)!.label} ${names.length + 1}`],
+        };
+      });
       setExpandedSections((prev) => ({ ...prev, [`${sectionKey}.${sectionIndex}`]: true }));
       setErroredSections((prev) => ({ ...prev, [`${sectionKey}.${sectionIndex}`]: false }));
     };
@@ -88,6 +99,10 @@ export const FormRenderer = forwardRef<FormRendererRef, FormRendererProps>(
         return { ...prev, [key]: arr.filter((_, i) => i !== index) };
       });
       setInstanceIds((prev) => {
+        const arr = prev[key] ?? [];
+        return { ...prev, [key]: arr.filter((_, i) => i !== index) };
+      });
+      setInstanceNames((prev) => {
         const arr = prev[key] ?? [];
         return { ...prev, [key]: arr.filter((_, i) => i !== index) };
       });
@@ -125,6 +140,71 @@ export const FormRenderer = forwardRef<FormRendererRef, FormRendererProps>(
       });
     };
 
+    const cloneSection = (key: string, index: number) => {
+      const section = schema.find((s) => s.key === key);
+      if (!section) return;
+      const empty = createEmptySection(section);
+      setFormState((prev) => {
+        const arr = (prev[key] as any[]) ?? [];
+        const original = arr[index] ?? {};
+        const copy: Record<string, any> = { ...original };
+        section.fields.forEach((f) => {
+          if (f.type === 'photo' || f.type === 'signature' || f.type === 'imageSelect') {
+            copy[f.key] = empty[f.key];
+          }
+        });
+        const newArr = [...arr];
+        newArr.splice(index + 1, 0, copy);
+        return { ...prev, [key]: newArr };
+      });
+      setInstanceIds((prev) => {
+        const arr = prev[key] ?? [];
+        const newArr = [...arr];
+        newArr.splice(index + 1, 0, uuidv4());
+        return { ...prev, [key]: newArr };
+      });
+      setInstanceNames((prev) => {
+        const arr = prev[key] ?? [];
+        const newArr = [...arr];
+        newArr.splice(index + 1, 0, `${section.label} ${arr.length + 1}`);
+        return { ...prev, [key]: newArr };
+      });
+      setExpandedSections((prev) => {
+        const updated: Record<string, boolean> = {};
+        Object.keys(prev).forEach((k) => {
+          if (k.startsWith(`${key}.`)) {
+            const idx = parseInt(k.split('.')[1], 10);
+            if (idx <= index) {
+              updated[k] = prev[k];
+            } else {
+              updated[`${key}.${idx + 1}`] = prev[k];
+            }
+          } else {
+            updated[k] = prev[k];
+          }
+        });
+        updated[`${key}.${index + 1}`] = true;
+        return updated;
+      });
+      setErroredSections((prev) => {
+        const updated: Record<string, boolean> = {};
+        Object.keys(prev).forEach((k) => {
+          if (k.startsWith(`${key}.`)) {
+            const idx = parseInt(k.split('.')[1], 10);
+            if (idx <= index) {
+              updated[k] = prev[k];
+            } else {
+              updated[`${key}.${idx + 1}`] = prev[k];
+            }
+          } else {
+            updated[k] = prev[k];
+          }
+        });
+        updated[`${key}.${index + 1}`] = false;
+        return updated;
+      });
+    };
+
     const renderSection = (section: (typeof schema)[number]) => {
       if (section.repeatable) {
         const entries: Record<string, any>[] = formState[section.key] ?? [];
@@ -138,7 +218,7 @@ export const FormRenderer = forwardRef<FormRendererRef, FormRendererProps>(
             {entries.map((row, idx) => (
               <Collapsible
                 key={ids[idx] ?? `${section.key}-${idx}`}
-                title={`${section.label} ${idx + 1}`}
+                title={instanceNames[section.key]?.[idx] ?? `${section.label} ${idx + 1}`}
                 isOpen={expandedSections[`${section.key}.${idx}`]}
                 onToggle={(open) =>
                   setExpandedSections((prev) => ({
@@ -169,6 +249,11 @@ export const FormRenderer = forwardRef<FormRendererRef, FormRendererProps>(
                       readOnly={readOnly}
                     />
                   ))}
+                  <Button title="Rename" onPress={() => {
+                    setRenameValue(instanceNames[section.key]?.[idx] ?? `${section.label} ${idx + 1}`);
+                    setRenameInfo({ key: section.key, idx });
+                  }} />
+                  <Button title="Copy" onPress={() => cloneSection(section.key, idx)} />
                   <Button title="Remove" onPress={() => removeSection(section.key, idx)} />
                 </View>
               </Collapsible>
@@ -209,9 +294,40 @@ export const FormRenderer = forwardRef<FormRendererRef, FormRendererProps>(
     };
 
     return (
-      <ScrollView ref={scrollRef} style={{ flex: 1 }} contentContainerStyle={styles.container}>
-        {schema.map((section) => renderSection(section))}
-      </ScrollView>
+      <>
+        <ScrollView ref={scrollRef} style={{ flex: 1 }} contentContainerStyle={styles.container}>
+          {schema.map((section) => renderSection(section))}
+        </ScrollView>
+        {renameInfo && (
+          <Modal transparent visible onRequestClose={() => setRenameInfo(null)}>
+            <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setRenameInfo(null)}>
+              <View style={styles.modalContent}>
+                <Text style={styles.sectionLabel}>Rename Section</Text>
+                <TextInput
+                  value={renameValue}
+                  onChangeText={setRenameValue}
+                  style={styles.textInput}
+                  placeholder="Section Name"
+                />
+                <Button
+                  title="Save"
+                  onPress={() => {
+                    if (renameInfo) {
+                      setInstanceNames((prev) => {
+                        const arr = prev[renameInfo.key] ?? [];
+                        const newArr = [...arr];
+                        newArr[renameInfo.idx] = renameValue;
+                        return { ...prev, [renameInfo.key]: newArr };
+                      });
+                    }
+                    setRenameInfo(null);
+                  }}
+                />
+              </View>
+            </TouchableOpacity>
+          </Modal>
+        )}
+      </>
     );
   },
 );
