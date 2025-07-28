@@ -2,6 +2,7 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Constants from 'expo-constants';
 import { useEffect, useState } from 'react';
+import { API_BASE_URL } from '@/constants/api';
 import {
   Alert,
   Image,
@@ -50,7 +51,7 @@ export default function LoginScreen({ onLogin }: Props) {
   const handleLogin = async () => {
     try {
       const response = await fetch(
-        'https://uat.onsite-lite.co.uk/api/Authentication/login',
+        `${API_BASE_URL}/api/Authentication/login`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

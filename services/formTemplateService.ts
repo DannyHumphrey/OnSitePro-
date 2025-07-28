@@ -8,7 +8,9 @@ export type FormTemplate = {
   schema: FormSchema;
 };
 
-const API_ENDPOINT = 'https://uat.onsite-lite.co.uk/api/FormTemplates';
+import { API_BASE_URL } from '@/constants/api';
+
+const API_ENDPOINT = `${API_BASE_URL}/api/FormTemplates`;
 const CACHE_KEY = 'cached_form_types';
 const TIMESTAMP_KEY = 'cached_form_types_timestamp';
 const CACHE_MS = 7 * 24 * 60 * 60 * 1000; // 7 days

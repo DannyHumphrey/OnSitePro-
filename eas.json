@@ -13,6 +13,24 @@
     },
     "production": {
       "autoIncrement": true
+    },
+    "dev": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "env": { "APP_ENV": "dev" }
+    },
+    "qa": {
+      "env": { "APP_ENV": "qa" }
+    },
+    "uat": {
+      "env": { "APP_ENV": "uat" }
+    },
+    "staging": {
+      "env": { "APP_ENV": "staging" }
+    },
+    "live": {
+      "autoIncrement": true,
+      "env": { "APP_ENV": "live" }
     }
   },
   "submit": {

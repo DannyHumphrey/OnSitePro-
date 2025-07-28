@@ -16,6 +16,17 @@ This is an [Expo](https://expo.dev) project created with [`create-expo-app`](htt
    npx expo start
    ```
 
+### Choose an environment
+
+Environment specific API URLs are defined in `.env.*` files. Pass the desired
+file to Expo using the `--env-file` option:
+
+```bash
+npx expo start --env-file .env.dev
+```
+
+Valid environment files include `dev`, `qa`, `uat`, `staging` and `live`.
+
 In the output, you'll find options to open the app in a
 
 - [development build](https://docs.expo.dev/develop/development-builds/introduction/)
