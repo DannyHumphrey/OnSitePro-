@@ -82,18 +82,8 @@ export function SignatureField({ field, value, onChange, error, readOnly, onLayo
               ref={signatureRef}
               onOK={handleSaveSignature}
               onEmpty={() => setModalVisible(false)}
-              webStyle={`
-                .m-signature-pad--footer { display: none; }
-                body,html { margin: 0; height: 100%; }
-              `}
               style={{ flex: 1 }}
             />
-            <View style={{ padding: 12 }}>
-              <Button title="Clear" onPress={() => signatureRef.current?.clearSignature()} />
-              <Button title="Save" onPress={() => signatureRef.current?.onOK(handleSaveSignature)} />
-              <View style={{ height: 8 }} />
-              <Button title="Cancel" onPress={() => setModalVisible(false)} />
-            </View>
           </SafeAreaView>
         </Modal>
       )}

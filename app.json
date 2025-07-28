@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "OnSitePro",
-    "slug": "onsite-pro",
+    "slug": "c365-onsite-pro",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -9,7 +9,9 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+       "supportsTablet": true,
+      "bundleIdentifier": "uk.co.c365.onsitepro",
+      "buildNumber": "1.0.0"
     },
     "android": {
       "adaptiveIcon": {
@@ -37,9 +39,11 @@
     ],
     "extra": {
       "eas": {
-        "projectId": "a58b830f-5847-477d-a6b9-39a16b38b6ff"
-      }
+        "projectId": "0c3c3096-b8b2-4338-b69f-94e0a5aabb8d"
+      },
+      "apiBaseUrl": "https://uat.onsite-lite.co.uk",
+      "appEnv": "dev"
     },
-    "owner": "dhumphrey-c365"
+    "owner": "compliance365"
   }
 }
