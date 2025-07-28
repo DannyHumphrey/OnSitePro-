@@ -3,6 +3,7 @@ import * as FileSystem from 'expo-file-system';
 import jwtDecode from 'jwt-decode';
 import { getToken } from './authService';
 import type { DraftForm } from './draftService';
+import { API_BASE_URL } from '@/constants/api';
 
 export type OutboxForm =
   Omit<DraftForm, 'status'> & {
@@ -13,7 +14,7 @@ export type OutboxForm =
 
 const INDEX_KEY = 'outbox:index';
 const SENT_INDEX_KEY = 'sent:index';
-const SYNC_ENDPOINT = 'https://uat.onsite-lite.co.uk/api/Instance/SaveInstance';
+const SYNC_ENDPOINT = `${API_BASE_URL}/api/Instance/SaveInstance`;
 
 async function convertImagesToBase64(obj: any): Promise<any> {
   if (Array.isArray(obj)) {
