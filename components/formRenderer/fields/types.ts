@@ -60,12 +60,22 @@ export type FormField =
       options: string[] | { label: string; value: string }[];
       required?: boolean;
       visibleWhen?: VisibleWhen;
+    }
+  | {
+      type: 'section';
+      key: string;
+      label: string;
+      repeatable?: boolean;
+      useModal?: boolean;
+      fields: FormField[];
+      visibleWhen?: VisibleWhen;
     };
 
 export type FormSection = {
   key: string;
   label: string;
   repeatable?: boolean;
+  useModal?: boolean;
   fields: FormField[];
 };
 
