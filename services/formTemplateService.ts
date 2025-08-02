@@ -8,9 +8,8 @@ export type FormTemplate = {
   schema: FormSchema;
 };
 
-import { API_BASE_URL } from '@/constants/api';
-
-const API_ENDPOINT = `${API_BASE_URL}/api/FormTemplates`;
+import { FORM_API_BASE_URL } from '@/constants/api';
+const API_ENDPOINT = `${FORM_API_BASE_URL}/api/FormTemplates`;
 const CACHE_KEY = 'cached_form_types';
 const TIMESTAMP_KEY = 'cached_form_types_timestamp';
 const CACHE_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
