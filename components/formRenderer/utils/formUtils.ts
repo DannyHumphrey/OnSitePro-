@@ -59,24 +59,41 @@ export function getVisibleFields(
   state: Record<string, any>,
 ): { field: FormField; path: (string | number)[] }[] {
   const fields: { field: FormField; path: (string | number)[] }[] = [];
-  schema.forEach((section) => {
-    if (section.repeatable) {
-      const rows: Record<string, any>[] = state[section.key] ?? [];
-      rows.forEach((row, idx) => {
-        section.fields.forEach((f) => {
-          if (evaluateVisibleWhen(f.visibleWhen, state, row)) {
-            fields.push({ field: f, path: [section.key, idx, f.key] });
-          }
+
+  const traverseSections = (
+    sections: FormSchema,
+    basePath: (string | number)[],
+  ) => {
+    sections.forEach((section) => {
+      const currentPath = [...basePath, section.key];
+      if (section.repeatable) {
+        const rows: Record<string, any>[] = getNestedValue(state, currentPath) ?? [];
+        rows.forEach((row, idx) => {
+          traverseFields(section.fields, [...currentPath, idx], row);
         });
-      });
-    } else {
-      const row: Record<string, any> = state[section.key] ?? {};
-      section.fields.forEach((f) => {
-        if (evaluateVisibleWhen(f.visibleWhen, state, row)) {
-          fields.push({ field: f, path: [section.key, f.key] });
+      } else {
+        const row: Record<string, any> = getNestedValue(state, currentPath) ?? {};
+        traverseFields(section.fields, currentPath, row);
+      }
+    });
+  };
+
+  const traverseFields = (
+    fs: FormField[],
+    basePath: (string | number)[],
+    localContext: Record<string, any>,
+  ) => {
+    fs.forEach((f) => {
+      if (f.type === 'section') {
+        if (evaluateVisibleWhen(f.visibleWhen, state, localContext)) {
+          traverseSections([f], basePath);
         }
-      });
-    }
-  });
+      } else if (evaluateVisibleWhen(f.visibleWhen, state, localContext)) {
+        fields.push({ field: f, path: [...basePath, f.key] });
+      }
+    });
+  };
+
+  traverseSections(schema, []);
   return fields;
 }
