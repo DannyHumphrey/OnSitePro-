@@ -1,6 +1,6 @@
 import type { FormSchema } from '@/components/formRenderer/fields/types';
 import { getToken } from './authService';
-import { API_BASE_URL } from '@/constants/api';
+import { FORM_API_BASE_URL } from '@/constants/api';
 
 export type EmbeddedFormResponse = {
   schema: FormSchema;
@@ -9,7 +9,7 @@ export type EmbeddedFormResponse = {
   formName?: string;
 };
 
-const API_BASE = `${API_BASE_URL}/api/Instance/GetEmbeddedForm`;
+const API_BASE = `${FORM_API_BASE_URL}/api/Instance/GetEmbeddedForm`;
 
 export async function fetchEmbeddedForm(
   userGuid: string,
