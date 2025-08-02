@@ -30,6 +30,7 @@ import SentScreen from "@/screens/SentScreen";
 import SettingsScreen from "@/screens/SettingsScreen";
 import { cleanupOldSentForms } from "@/services/sentService";
 import EmbeddedFormScreen from "@/screens/EmbeddedFormScreen";
+import FormBuilderScreen from "@/screens/FormBuilderScreen";
 
 const RootStack = createNativeStackNavigator<RootStackParamList>();
 const DraftsStack = createNativeStackNavigator<DraftsStackParamList>();
@@ -153,6 +154,7 @@ export default function App() {
     config: {
       screens: {
         EmbeddedFormScreen: 'embedded-form',
+        FormBuilderScreen: 'form-builder',
       },
     },
   };
@@ -219,6 +221,11 @@ export default function App() {
               name="EmbeddedFormScreen"
               component={EmbeddedFormScreen}
               options={{ headerShown: false }}
+            />
+            <RootStack.Screen
+              name="FormBuilderScreen"
+              component={FormBuilderScreen}
+              options={{ title: "Form Builder" }}
             />
           </RootStack.Navigator>
           <Modal transparent visible={sessionExpired} animationType="fade">
