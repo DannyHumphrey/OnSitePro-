@@ -1,5 +1,13 @@
 import React, { forwardRef, useImperativeHandle, useRef, useState } from 'react';
-import { Button, ScrollView, Text, View, Modal, TextInput, TouchableOpacity } from 'react-native';
+import {
+  Button,
+  ScrollView,
+  Text,
+  View,
+  Modal,
+  TextInput,
+  TouchableOpacity,
+} from 'react-native';
 import { v4 as uuidv4 } from 'uuid';
 import { Collapsible } from '../Collapsible';
 import { FieldRenderer } from './fields/FieldRenderer';
@@ -7,6 +15,8 @@ import { useFormState } from './hooks/useFormState';
 import { getPhotoFields, validateForm } from './hooks/useValidation';
 import { styles } from './styles';
 import type { FormRendererProps, FormRendererRef } from './types';
+import type { FormSection } from './fields/types';
+import { getNestedValue, setNestedValue } from './utils/formUtils';
 
 export const FormRenderer = forwardRef<FormRendererRef, FormRendererProps>(
   ({ schema, initialData, readOnly }, ref) => {
@@ -34,6 +44,7 @@ export const FormRenderer = forwardRef<FormRendererRef, FormRendererProps>(
     const fieldPositions = useRef<Record<string, number>>({});
     const [renameInfo, setRenameInfo] = useState<{ key: string; idx: number } | null>(null);
     const [renameValue, setRenameValue] = useState('');
+    const [modalKey, setModalKey] = useState<string | null>(null);
 
     useImperativeHandle(ref, () => ({
       getFormData: () => formState,
@@ -48,7 +59,14 @@ export const FormRenderer = forwardRef<FormRendererRef, FormRendererProps>(
           sectionPositions,
         ),
       openSection: (key: string) => {
-        setExpandedSections((prev) => ({ ...prev, [key]: true }));
+        setExpandedSections((prev) => {
+          const updated = { ...prev };
+          const parts = key.split('.');
+          for (let i = 1; i <= parts.length; i++) {
+            updated[parts.slice(0, i).join('.')] = true;
+          }
+          return updated;
+        });
         const y = sectionPositions.current[key];
         if (y !== undefined) {
           setTimeout(() => scrollRef.current?.scrollTo({ y, animated: true }), 50);
@@ -62,8 +80,14 @@ export const FormRenderer = forwardRef<FormRendererRef, FormRendererProps>(
       },
       scrollToField: (key: string) => {
         const parts = key.split('.');
-        const section = parts.length > 2 ? `${parts[0]}.${parts[1]}` : parts[0];
-        setExpandedSections((prev) => ({ ...prev, [section]: true }));
+        const sectionParts = parts.slice(0, -1);
+        setExpandedSections((prev) => {
+          const updated = { ...prev };
+          for (let i = 1; i <= sectionParts.length; i++) {
+            updated[sectionParts.slice(0, i).join('.')] = true;
+          }
+          return updated;
+        });
         const y = fieldPositions.current[key];
         if (y !== undefined) {
           setTimeout(() => scrollRef.current?.scrollTo({ y, animated: true }), 50);
@@ -73,30 +97,27 @@ export const FormRenderer = forwardRef<FormRendererRef, FormRendererProps>(
       getPhotoFields: () => getPhotoFields(schema, formState),
     }));
 
-    const addSection = (sectionKey: string, sectionIndex: number) => {
-      setFormState((prev) => {
-        const arr = (prev[sectionKey] as any[]) ?? [];
-        return { ...prev, [sectionKey]: [...arr, createEmptySection(schema.find((s) => s.key === sectionKey)!)] };
-      });
+    const addSection = (section: FormSection, path: (string | number)[]) => {
+      const key = path.join('.');
+      const arr: any[] = getNestedValue(formState, path) ?? [];
+      setFormState((prev) => setNestedValue(prev, path, [...arr, createEmptySection(section)]));
       setInstanceIds((prev) => {
-        const ids = prev[sectionKey] ?? [];
-        return { ...prev, [sectionKey]: [...ids, uuidv4()] };
+        const ids = prev[key] ?? [];
+        return { ...prev, [key]: [...ids, uuidv4()] };
       });
       setInstanceNames((prev) => {
-        const names = prev[sectionKey] ?? [];
-        return {
-          ...prev,
-          [sectionKey]: [...names, `${schema.find((s) => s.key === sectionKey)!.label} ${names.length + 1}`],
-        };
+        const names = prev[key] ?? [];
+        return { ...prev, [key]: [...names, `${section.label} ${names.length + 1}`] };
       });
-      setExpandedSections((prev) => ({ ...prev, [`${sectionKey}.${sectionIndex}`]: true }));
-      setErroredSections((prev) => ({ ...prev, [`${sectionKey}.${sectionIndex}`]: false }));
+      setExpandedSections((prev) => ({ ...prev, [`${key}.${arr.length}`]: true }));
+      setErroredSections((prev) => ({ ...prev, [`${key}.${arr.length}`]: false }));
     };
 
-    const removeSection = (key: string, index: number) => {
+    const removeSection = (path: (string | number)[], index: number) => {
+      const key = path.join('.');
       setFormState((prev) => {
-        const arr = (prev[key] as any[]) ?? [];
-        return { ...prev, [key]: arr.filter((_, i) => i !== index) };
+        const arr: any[] = getNestedValue(prev, path) ?? [];
+        return setNestedValue(prev, path, arr.filter((_, i) => i !== index));
       });
       setInstanceIds((prev) => {
         const arr = prev[key] ?? [];
@@ -106,15 +127,19 @@ export const FormRenderer = forwardRef<FormRendererRef, FormRendererProps>(
         const arr = prev[key] ?? [];
         return { ...prev, [key]: arr.filter((_, i) => i !== index) };
       });
+      const prefix = `${key}.`;
       setExpandedSections((prev) => {
         const updated: Record<string, boolean> = {};
         Object.keys(prev).forEach((k) => {
-          if (k.startsWith(`${key}.`)) {
-            const idx = parseInt(k.split('.')[1], 10);
+          if (k.startsWith(prefix)) {
+            const rest = k.slice(prefix.length);
+            const [idxStr, ...tail] = rest.split('.');
+            const idx = parseInt(idxStr, 10);
             if (idx < index) {
               updated[k] = prev[k];
             } else if (idx > index) {
-              updated[`${key}.${idx - 1}`] = prev[k];
+              const newKey = `${key}.${idx - 1}${tail.length ? `.${tail.join('.')}` : ''}`;
+              updated[newKey] = prev[k];
             }
           } else {
             updated[k] = prev[k];
@@ -125,12 +150,15 @@ export const FormRenderer = forwardRef<FormRendererRef, FormRendererProps>(
       setErroredSections((prev) => {
         const updated: Record<string, boolean> = {};
         Object.keys(prev).forEach((k) => {
-          if (k.startsWith(`${key}.`)) {
-            const idx = parseInt(k.split('.')[1], 10);
+          if (k.startsWith(prefix)) {
+            const rest = k.slice(prefix.length);
+            const [idxStr, ...tail] = rest.split('.');
+            const idx = parseInt(idxStr, 10);
             if (idx < index) {
               updated[k] = prev[k];
             } else if (idx > index) {
-              updated[`${key}.${idx - 1}`] = prev[k];
+              const newKey = `${key}.${idx - 1}${tail.length ? `.${tail.join('.')}` : ''}`;
+              updated[newKey] = prev[k];
             }
           } else {
             updated[k] = prev[k];
@@ -140,12 +168,11 @@ export const FormRenderer = forwardRef<FormRendererRef, FormRendererProps>(
       });
     };
 
-    const cloneSection = (key: string, index: number) => {
-      const section = schema.find((s) => s.key === key);
-      if (!section) return;
+    const cloneSection = (section: FormSection, path: (string | number)[], index: number) => {
+      const key = path.join('.');
       const empty = createEmptySection(section);
       setFormState((prev) => {
-        const arr = (prev[key] as any[]) ?? [];
+        const arr: any[] = getNestedValue(prev, path) ?? [];
         const original = arr[index] ?? {};
         const copy: Record<string, any> = { ...original };
         section.fields.forEach((f) => {
@@ -155,7 +182,7 @@ export const FormRenderer = forwardRef<FormRendererRef, FormRendererProps>(
         });
         const newArr = [...arr];
         newArr.splice(index + 1, 0, copy);
-        return { ...prev, [key]: newArr };
+        return setNestedValue(prev, path, newArr);
       });
       setInstanceIds((prev) => {
         const arr = prev[key] ?? [];
@@ -169,15 +196,19 @@ export const FormRenderer = forwardRef<FormRendererRef, FormRendererProps>(
         newArr.splice(index + 1, 0, `${section.label} ${arr.length + 1}`);
         return { ...prev, [key]: newArr };
       });
+      const prefix = `${key}.`;
       setExpandedSections((prev) => {
         const updated: Record<string, boolean> = {};
         Object.keys(prev).forEach((k) => {
-          if (k.startsWith(`${key}.`)) {
-            const idx = parseInt(k.split('.')[1], 10);
+          if (k.startsWith(prefix)) {
+            const rest = k.slice(prefix.length);
+            const [idxStr, ...tail] = rest.split('.');
+            const idx = parseInt(idxStr, 10);
             if (idx <= index) {
               updated[k] = prev[k];
             } else {
-              updated[`${key}.${idx + 1}`] = prev[k];
+              const newKey = `${key}.${idx + 1}${tail.length ? `.${tail.join('.')}` : ''}`;
+              updated[newKey] = prev[k];
             }
           } else {
             updated[k] = prev[k];
@@ -189,12 +220,15 @@ export const FormRenderer = forwardRef<FormRendererRef, FormRendererProps>(
       setErroredSections((prev) => {
         const updated: Record<string, boolean> = {};
         Object.keys(prev).forEach((k) => {
-          if (k.startsWith(`${key}.`)) {
-            const idx = parseInt(k.split('.')[1], 10);
+          if (k.startsWith(prefix)) {
+            const rest = k.slice(prefix.length);
+            const [idxStr, ...tail] = rest.split('.');
+            const idx = parseInt(idxStr, 10);
             if (idx <= index) {
               updated[k] = prev[k];
             } else {
-              updated[`${key}.${idx + 1}`] = prev[k];
+              const newKey = `${key}.${idx + 1}${tail.length ? `.${tail.join('.')}` : ''}`;
+              updated[newKey] = prev[k];
             }
           } else {
             updated[k] = prev[k];
@@ -205,97 +239,179 @@ export const FormRenderer = forwardRef<FormRendererRef, FormRendererProps>(
       });
     };
 
-    const renderSection = (section: (typeof schema)[number]) => {
-      if (section.repeatable) {
-        const entries: Record<string, any>[] = formState[section.key] ?? [];
-        const ids = instanceIds[section.key] ?? [];
+    const renderFields = (
+      fields: FormSection['fields'],
+      basePath: (string | number)[],
+      row: Record<string, any>,
+    ) =>
+      fields.map((f) => {
+        const fieldPath = [...basePath, f.key];
+        const pathKey = fieldPath.join('.');
+        if (f.type === 'section') {
+          return renderSection(f, fieldPath);
+        }
         return (
-          <View key={section.key} style={styles.sectionContainer}>
+          <FieldRenderer
+            key={pathKey}
+            field={f}
+            path={fieldPath}
+            formState={formState}
+            localContext={row}
+            activeDateKey={activeDateKey}
+            setActiveDateKey={setActiveDateKey}
+            handleChange={handleChange}
+            error={formErrors[pathKey]}
+            registerFieldPosition={(k, y) => {
+              fieldPositions.current[k] = y;
+            }}
+            readOnly={readOnly}
+          />
+        );
+      });
+
+    const renderSection = (section: FormSection, path: (string | number)[]) => {
+      const key = path.join('.');
+      if (section.repeatable) {
+        const entries: Record<string, any>[] = getNestedValue(formState, path) ?? [];
+        const ids = instanceIds[key] ?? [];
+        return (
+          <View key={key} style={styles.sectionContainer}>
             <View style={styles.repeatableHeader}>
               <Text style={styles.sectionLabel}>{section.label}</Text>
-              <Button title={`Add ${section.label}`} onPress={() => addSection(section.key, entries.length)} />
+              {!readOnly && (
+                <Button
+                  title={`Add ${section.label}`}
+                  onPress={() => addSection(section, path)}
+                />
+              )}
             </View>
-            {entries.map((row, idx) => (
-              <Collapsible
-                key={ids[idx] ?? `${section.key}-${idx}`}
-                title={instanceNames[section.key]?.[idx] ?? `${section.label} ${idx + 1}`}
-                isOpen={expandedSections[`${section.key}.${idx}`]}
-                onToggle={(open) =>
-                  setExpandedSections((prev) => ({
-                    ...prev,
-                    [`${section.key}.${idx}`]: open,
-                  }))
-                }
-                hasError={erroredSections[`${section.key}.${idx}`]}
-                onLayout={(e) => {
-                  sectionPositions.current[`${section.key}.${idx}`] = e.nativeEvent.layout.y;
-                }}
-              >
-                <View style={styles.sectionContent}>
-                  <View style={styles.repeatableActions}>
-                    <Button
-                      title="Rename"
-                      onPress={() => {
-                        setRenameValue(
-                          instanceNames[section.key]?.[idx] ?? `${section.label} ${idx + 1}`,
-                        );
-                        setRenameInfo({ key: section.key, idx });
-                      }}
-                    />
-                    <Button title="Copy" onPress={() => cloneSection(section.key, idx)} />
-                    <Button title="Remove" onPress={() => removeSection(section.key, idx)} />
+            {entries.map((row, idx) => {
+              const entryPath = [...path, idx];
+              const entryKey = `${key}.${idx}`;
+              const title = instanceNames[key]?.[idx] ?? `${section.label} ${idx + 1}`;
+              if (section.useModal) {
+                return (
+                  <View key={ids[idx] ?? entryKey} style={styles.sectionContainer}>
+                    <View style={styles.repeatableActions}>
+                      <Button title={title} onPress={() => setModalKey(entryKey)} />
+                      {!readOnly && (
+                        <>
+                          <Button
+                            title="Rename"
+                            onPress={() => {
+                              setRenameValue(title);
+                              setRenameInfo({ key, idx });
+                            }}
+                          />
+                          <Button
+                            title="Copy"
+                            onPress={() => cloneSection(section, path, idx)}
+                          />
+                          <Button title="Remove" onPress={() => removeSection(path, idx)} />
+                        </>
+                      )}
+                    </View>
+                    {modalKey === entryKey && (
+                      <Modal transparent visible onRequestClose={() => setModalKey(null)}>
+                        <TouchableOpacity
+                          style={styles.modalOverlay}
+                          activeOpacity={1}
+                          onPress={() => setModalKey(null)}
+                        >
+                          <View style={styles.modalContent}>
+                            <ScrollView>
+                              {renderFields(section.fields, entryPath, row)}
+                              {!readOnly && (
+                                <Button title="Close" onPress={() => setModalKey(null)} />
+                              )}
+                            </ScrollView>
+                          </View>
+                        </TouchableOpacity>
+                      </Modal>
+                    )}
                   </View>
-                  {section.fields.map((f) => (
-                    <FieldRenderer
-                      key={`${section.key}-${idx}-${f.key}`}
-                      field={f}
-                      path={[section.key, idx, f.key]}
-                      formState={formState}
-                      localContext={row}
-                      activeDateKey={activeDateKey}
-                      setActiveDateKey={setActiveDateKey}
-                      handleChange={handleChange}
-                      error={formErrors[`${section.key}.${idx}.${f.key}`]}
-                      registerFieldPosition={(k, y) => {
-                        fieldPositions.current[k] = y;
-                      }}
-                      readOnly={readOnly}
-                    />
-                  ))}
-                </View>
-              </Collapsible>
-            ))}
+                );
+              }
+              return (
+                <Collapsible
+                  key={ids[idx] ?? entryKey}
+                  title={title}
+                  isOpen={expandedSections[entryKey]}
+                  onToggle={(open) =>
+                    setExpandedSections((prev) => ({ ...prev, [entryKey]: open }))
+                  }
+                  hasError={erroredSections[entryKey]}
+                  onLayout={(e) => {
+                    sectionPositions.current[entryKey] = e.nativeEvent.layout.y;
+                  }}
+                >
+                  <View style={styles.sectionContent}>
+                    {!readOnly && (
+                      <View style={styles.repeatableActions}>
+                        <Button
+                          title="Rename"
+                          onPress={() => {
+                            setRenameValue(title);
+                            setRenameInfo({ key, idx });
+                          }}
+                        />
+                        <Button
+                          title="Copy"
+                          onPress={() => cloneSection(section, path, idx)}
+                        />
+                        <Button title="Remove" onPress={() => removeSection(path, idx)} />
+                      </View>
+                    )}
+                    {renderFields(section.fields, entryPath, row)}
+                  </View>
+                </Collapsible>
+              );
+            })}
           </View>
         );
       }
 
+      const row: Record<string, any> = getNestedValue(formState, path) ?? {};
+      if (section.useModal) {
+        return (
+          <View key={key} style={styles.sectionContainer}>
+            <Button
+              title={section.label}
+              onPress={() => setModalKey(key)}
+              onLayout={(e) => {
+                sectionPositions.current[key] = e.nativeEvent.layout.y;
+              }}
+            />
+            {modalKey === key && (
+              <Modal transparent visible onRequestClose={() => setModalKey(null)}>
+                <TouchableOpacity
+                  style={styles.modalOverlay}
+                  activeOpacity={1}
+                  onPress={() => setModalKey(null)}
+                >
+                  <View style={styles.modalContent}>
+                    <Text style={styles.sectionLabel}>{section.label}</Text>
+                    <ScrollView>{renderFields(section.fields, path, row)}</ScrollView>
+                    {!readOnly && <Button title="Close" onPress={() => setModalKey(null)} />}
+                  </View>
+                </TouchableOpacity>
+              </Modal>
+            )}
+          </View>
+        );
+      }
       return (
         <Collapsible
-          key={section.key}
+          key={key}
           title={section.label}
-          isOpen={expandedSections[section.key]}
-          onToggle={(open) => setExpandedSections((prev) => ({ ...prev, [section.key]: open }))}
-          hasError={erroredSections[section.key]}
+          isOpen={expandedSections[key]}
+          onToggle={(open) => setExpandedSections((prev) => ({ ...prev, [key]: open }))}
+          hasError={erroredSections[key]}
           onLayout={(e) => {
-            sectionPositions.current[section.key] = e.nativeEvent.layout.y;
+            sectionPositions.current[key] = e.nativeEvent.layout.y;
           }}
         >
-          {section.fields.map((f) => (
-            <FieldRenderer
-              key={`${section.key}-${f.key}`}
-              field={f}
-              path={[section.key, f.key]}
-              formState={formState}
-              activeDateKey={activeDateKey}
-              setActiveDateKey={setActiveDateKey}
-              handleChange={handleChange}
-              error={formErrors[`${section.key}.${f.key}`]}
-              registerFieldPosition={(k, y) => {
-                fieldPositions.current[k] = y;
-              }}
-              readOnly={readOnly}
-            />
-          ))}
+          {renderFields(section.fields, path, row)}
         </Collapsible>
       );
     };
@@ -303,11 +419,15 @@ export const FormRenderer = forwardRef<FormRendererRef, FormRendererProps>(
     return (
       <>
         <ScrollView ref={scrollRef} style={{ flex: 1 }} contentContainerStyle={styles.container}>
-          {schema.map((section) => renderSection(section))}
+          {schema.map((section) => renderSection(section, [section.key]))}
         </ScrollView>
         {renameInfo && (
           <Modal transparent visible onRequestClose={() => setRenameInfo(null)}>
-            <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setRenameInfo(null)}>
+            <TouchableOpacity
+              style={styles.modalOverlay}
+              activeOpacity={1}
+              onPress={() => setRenameInfo(null)}
+            >
               <View style={styles.modalContent}>
                 <Text style={styles.sectionLabel}>Rename Section</Text>
                 <TextInput
@@ -343,3 +463,4 @@ FormRenderer.displayName = 'FormRenderer';
 
 export { FormRendererProps, FormRendererRef } from './types';
 export default FormRenderer;
+
