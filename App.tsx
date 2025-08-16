@@ -23,6 +23,7 @@ import type {
 import CreateFormScreen from "@/screens/CreateFormScreen";
 import DraftsScreen from "@/screens/DraftsScreen";
 import EmbeddedFormScreen from "@/screens/EmbeddedFormScreen";
+import FormBuilderScreen from "@/screens/FormBuilderScreen";
 import FormScreen from "@/screens/FormScreen";
 import InboxScreen from "@/screens/InboxScreen";
 import LoginScreen from "@/screens/LoginScreen";
@@ -153,6 +154,7 @@ export default function App() {
     config: {
       screens: {
         EmbeddedFormScreen: 'embedded-form',
+        FormBuilderScreen: 'form-builder',
       },
     },
   };
@@ -219,6 +221,11 @@ export default function App() {
               name="EmbeddedFormScreen"
               component={EmbeddedFormScreen}
               options={{ headerShown: false }}
+            />
+            <RootStack.Screen
+              name="FormBuilderScreen"
+              component={FormBuilderScreen}
+              options={{ title: "Form Builder" }}
             />
           </RootStack.Navigator>
           <Modal transparent visible={sessionExpired} animationType="fade">

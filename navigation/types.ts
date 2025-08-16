@@ -30,4 +30,5 @@ export type RootStackParamList = {
     survey?: string;
     readOnly?: boolean | string;
   };
+  FormBuilderScreen: undefined;
 };

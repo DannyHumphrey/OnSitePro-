@@ -3,7 +3,8 @@ import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import * as FileSystem from "expo-file-system";
 import { useCallback, useState } from "react";
 import { Alert, FlatList, StyleSheet, View } from "react-native";
-import { Card, FAB, IconButton, TextInput } from "react-native-paper";
+import { Card, FAB, IconButton, TextInput, Portal, useTheme } from "react-native-paper";
+import { useAvailableForms } from "@/hooks/useAvailableForms";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { ThemedText } from "@/components/ThemedText";
@@ -25,6 +26,9 @@ export default function DraftsScreen() {
   const [drafts, setDrafts] = useState<DraftForm[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const { setCounts } = useFormCounts();
+  const [fabOpen, setFabOpen] = useState(false);
+  const forms = useAvailableForms();
+  const theme = useTheme();
 
   const loadDrafts = useCallback(async () => {
     const data = await getAllDrafts();
@@ -154,12 +158,37 @@ export default function DraftsScreen() {
           </ThemedView>
         }
       />
-      <FAB
-        icon="plus"
-        style={styles.fab}
-        onPress={() => navigation.navigate("CreateFormScreen")}
-        accessibilityLabel="Create New Form"
-      />
+      <Portal>
+        <FAB.Group
+          testID="fab-group-create"
+          open={fabOpen}
+          visible
+          icon={fabOpen ? "close" : "plus"}
+          actions={forms.map((f) => ({
+            icon: f.icon || "file-plus",
+            label: f.label,
+            onPress: () => {
+              setFabOpen(false);
+              navigation.navigate(f.routeName as never, (f.params ?? {}) as never);
+            },
+            accessibilityLabel: `Add ${f.label}`,
+            testID: `fab-action-${f.key}`,
+            labelTextColor: theme.colors.onSecondaryContainer,
+            small: false,
+          }))}
+          onStateChange={({ open }) => setFabOpen(open)}
+          onPress={() => {
+            if (forms.length === 1) {
+              const f = forms[0];
+              navigation.navigate(f.routeName as never, (f.params ?? {}) as never);
+            } else {
+              setFabOpen(!fabOpen);
+            }
+          }}
+          fabStyle={styles.fab}
+          accessibilityLabel="Create new item"
+        />
+      </Portal>
     </SafeAreaView>
   );
 }
