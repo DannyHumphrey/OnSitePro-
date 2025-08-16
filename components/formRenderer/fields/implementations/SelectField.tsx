@@ -1,16 +1,16 @@
 import React, { useMemo, useState } from 'react';
 import {
-  View,
-  Text,
+  LayoutChangeEvent,
   Modal,
-  TouchableOpacity,
   ScrollView,
   StyleSheet,
-  LayoutChangeEvent,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import { TextInput, Checkbox } from 'react-native-paper';
-import { FormField } from '../types';
+import { Checkbox, TextInput } from 'react-native-paper';
 import { styles as formStyles } from '../../styles';
+import { FormField } from '../types';
 
 type Props = {
   field: Extract<FormField, { type: 'select' }>;
@@ -29,7 +29,13 @@ interface Option {
 export function SelectField({ field, value, onChange, error, readOnly, onLayout }: Props) {
   const [visible, setVisible] = useState(false);
 
-  const options: Option[] = useMemo(() => field.options, [field.options]);
+    const options: Option[] = useMemo(
+      () =>
+        field.options.map((o) =>
+          typeof o === 'string' ? { label: o, value: o } : o,
+        ),
+      [field.options],
+    );
 
   const selectedLabel = useMemo(
     () => options.find((o) => o.value === value)?.label ?? '',

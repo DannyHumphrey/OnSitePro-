@@ -1,17 +1,17 @@
 import { getValidToken, signOut } from "@/services/authService";
+import NetInfo from "@react-native-community/netinfo";
 import {
   NavigationContainer,
   DarkTheme as NavigationDarkTheme,
   DefaultTheme as NavigationDefaultTheme,
 } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import { useEffect, useRef, useState } from "react";
-import { ActivityIndicator, View, Modal, StyleSheet, Text } from "react-native";
-import { BottomNavigation, PaperProvider, Button } from "react-native-paper";
-import NetInfo from "@react-native-community/netinfo";
 import * as Linking from "expo-linking";
-import * as SecureStore from "expo-secure-store";
 import jwtDecode from "jwt-decode";
+import { useEffect, useRef, useState } from "react";
+import { ActivityIndicator, Modal, StyleSheet, Text, View } from "react-native";
+import { BottomNavigation, Button, PaperProvider } from "react-native-paper";
+import * as SecureStore from "./services/secureStoreWrapper";
 
 import { darkTheme, lightTheme } from "@/constants/theme";
 import { FormCountsProvider, useFormCounts } from "@/context/FormCountsContext";
@@ -22,6 +22,7 @@ import type {
 } from "@/navigation/types";
 import CreateFormScreen from "@/screens/CreateFormScreen";
 import DraftsScreen from "@/screens/DraftsScreen";
+import EmbeddedFormScreen from "@/screens/EmbeddedFormScreen";
 import FormScreen from "@/screens/FormScreen";
 import InboxScreen from "@/screens/InboxScreen";
 import LoginScreen from "@/screens/LoginScreen";
@@ -29,7 +30,6 @@ import OutboxScreen from "@/screens/OutboxScreen";
 import SentScreen from "@/screens/SentScreen";
 import SettingsScreen from "@/screens/SettingsScreen";
 import { cleanupOldSentForms } from "@/services/sentService";
-import EmbeddedFormScreen from "@/screens/EmbeddedFormScreen";
 
 const RootStack = createNativeStackNavigator<RootStackParamList>();
 const DraftsStack = createNativeStackNavigator<DraftsStackParamList>();

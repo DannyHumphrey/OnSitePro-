@@ -1,21 +1,20 @@
 import React, { forwardRef, useImperativeHandle, useRef, useState } from 'react';
 import {
   Button,
+  Modal,
   ScrollView,
   Text,
-  View,
-  Modal,
-  TextInput,
   TouchableOpacity,
+  View
 } from 'react-native';
 import { v4 as uuidv4 } from 'uuid';
 import { Collapsible } from '../Collapsible';
 import { FieldRenderer } from './fields/FieldRenderer';
+import type { FormSection } from './fields/types';
 import { useFormState } from './hooks/useFormState';
 import { getPhotoFields, validateForm } from './hooks/useValidation';
 import { styles } from './styles';
 import type { FormRendererProps, FormRendererRef } from './types';
-import type { FormSection } from './fields/types';
 import { getNestedValue, setNestedValue } from './utils/formUtils';
 
 export const FormRenderer = forwardRef<FormRendererRef, FormRendererProps>(
@@ -42,8 +41,6 @@ export const FormRenderer = forwardRef<FormRendererRef, FormRendererProps>(
     const scrollRef = useRef<ScrollView>(null);
     const sectionPositions = useRef<Record<string, number>>({});
     const fieldPositions = useRef<Record<string, number>>({});
-    const [renameInfo, setRenameInfo] = useState<{ key: string; idx: number } | null>(null);
-    const [renameValue, setRenameValue] = useState('');
     const [modalKey, setModalKey] = useState<string | null>(null);
 
     useImperativeHandle(ref, () => ({
@@ -280,7 +277,7 @@ export const FormRenderer = forwardRef<FormRendererRef, FormRendererProps>(
               <Text style={styles.sectionLabel}>{section.label}</Text>
               {!readOnly && (
                 <Button
-                  title={`Add ${section.label}`}
+                  title={`Add`}
                   onPress={() => addSection(section, path)}
                 />
               )}
@@ -296,13 +293,6 @@ export const FormRenderer = forwardRef<FormRendererRef, FormRendererProps>(
                       <Button title={title} onPress={() => setModalKey(entryKey)} />
                       {!readOnly && (
                         <>
-                          <Button
-                            title="Rename"
-                            onPress={() => {
-                              setRenameValue(title);
-                              setRenameInfo({ key, idx });
-                            }}
-                          />
                           <Button
                             title="Copy"
                             onPress={() => cloneSection(section, path, idx)}
@@ -348,13 +338,6 @@ export const FormRenderer = forwardRef<FormRendererRef, FormRendererProps>(
                   <View style={styles.sectionContent}>
                     {!readOnly && (
                       <View style={styles.repeatableActions}>
-                        <Button
-                          title="Rename"
-                          onPress={() => {
-                            setRenameValue(title);
-                            setRenameInfo({ key, idx });
-                          }}
-                        />
                         <Button
                           title="Copy"
                           onPress={() => cloneSection(section, path, idx)}
@@ -421,39 +404,6 @@ export const FormRenderer = forwardRef<FormRendererRef, FormRendererProps>(
         <ScrollView ref={scrollRef} style={{ flex: 1 }} contentContainerStyle={styles.container}>
           {schema.map((section) => renderSection(section, [section.key]))}
         </ScrollView>
-        {renameInfo && (
-          <Modal transparent visible onRequestClose={() => setRenameInfo(null)}>
-            <TouchableOpacity
-              style={styles.modalOverlay}
-              activeOpacity={1}
-              onPress={() => setRenameInfo(null)}
-            >
-              <View style={styles.modalContent}>
-                <Text style={styles.sectionLabel}>Rename Section</Text>
-                <TextInput
-                  value={renameValue}
-                  onChangeText={setRenameValue}
-                  style={styles.textInput}
-                  placeholder="Section Name"
-                />
-                <Button
-                  title="Save"
-                  onPress={() => {
-                    if (renameInfo) {
-                      setInstanceNames((prev) => {
-                        const arr = prev[renameInfo.key] ?? [];
-                        const newArr = [...arr];
-                        newArr[renameInfo.idx] = renameValue;
-                        return { ...prev, [renameInfo.key]: newArr };
-                      });
-                    }
-                    setRenameInfo(null);
-                  }}
-                />
-              </View>
-            </TouchableOpacity>
-          </Modal>
-        )}
       </>
     );
   },

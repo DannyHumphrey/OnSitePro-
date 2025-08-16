@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as SecureStore from 'expo-secure-store';
 import { sha256 } from 'js-sha256';
 import jwtDecode from 'jwt-decode';
+import * as SecureStore from './secureStoreWrapper';
 
 const TOKEN_KEY = 'auth.token';
 const USER_KEY = 'auth:username';

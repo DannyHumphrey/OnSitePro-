@@ -18,7 +18,7 @@ type FieldBase<TType extends string> = {
 };
 
 // Helpers
-type SelectOption = { label: string; value: string };
+export type SelectOption = { label: string; value: string };
 type PrimitiveFieldTypes =
   | 'text'
   | 'date'
@@ -43,7 +43,7 @@ type CurrencyField = FieldBase<'currency'> & {
 };
 
 type SelectField = FieldBase<'select'> & {
-  options: SelectOption[];
+  options: string[] | SelectOption[];
 };
 
 type MultiSelectField = FieldBase<'multiselect'> & {
