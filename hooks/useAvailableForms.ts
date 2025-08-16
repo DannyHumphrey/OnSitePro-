@@ -1,17 +1,16 @@
-import { getFormTemplates, type FormTemplate } from '@/services/formTemplateService';
+import { getFormTemplates, type FormDefinition } from '@/api/formsApi';
 import { useEffect, useMemo, useState } from 'react';
 
 export type AddableForm = {
   key: string;
   label: string;
   icon: string;
-  routeName: string;
-  params?: Record<string, unknown>;
-  enabled?: boolean;
+  formType: string;
+  version: number;
 };
 
 export function useAvailableForms(): AddableForm[] {
-  const [templates, setTemplates] = useState<FormTemplate[]>([]);
+  const [templates, setTemplates] = useState<FormDefinition[]>([]);
 
   useEffect(() => {
     getFormTemplates()
@@ -21,16 +20,13 @@ export function useAvailableForms(): AddableForm[] {
 
   return useMemo(
     () =>
-      templates
-        .map((t) => ({
-          key: t.id,
-          label: t.name,
-          icon: 'file-plus',
-          routeName: 'FormScreen',
-          params: { schema: t.schema, formType: t.id, formName: t.name },
-          enabled: true,
-        }))
-        .filter((f) => f.enabled !== false),
+      templates.map((t) => ({
+        key: String(t.formDefinitionId),
+        label: t.name,
+        icon: 'file-plus',
+        formType: t.formType,
+        version: t.version,
+      })),
     [templates],
   );
 }

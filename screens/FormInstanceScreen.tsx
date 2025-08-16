@@ -1,0 +1,243 @@
+import { useEffect, useMemo, useState } from 'react';
+import { View, Alert } from 'react-native';
+import { Appbar, Button, SegmentedButtons } from 'react-native-paper';
+import { getInstance, getFormTemplates, saveSection, transitionInstance } from '@/api/formsApi';
+import { v4 as uuidv4 } from 'uuid';
+import { FieldRenderer } from '@/components/formRenderer/fields/FieldRenderer';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useNetworkStatus } from '@/hooks/useNetworkStatus';
+import jwtDecode from 'jwt-decode';
+import { getToken } from '@/services/authService';
+
+export default function FormInstanceScreen({ route, navigation }: any) {
+  const { id, sectionKey: initialSection } = route.params;
+  const [instance, setInstance] = useState<any>(null);
+  const [defs, setDefs] = useState<any[]>([]);
+  const [activeSection, setActiveSection] = useState<string | undefined>(initialSection);
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+  const [userRoles, setUserRoles] = useState<string[]>([]);
+  const isOnline = useNetworkStatus();
+  const queueKey = `queue:form:${id}`;
+
+  useEffect(() => {
+    (async () => {
+      const [inst, templates] = await Promise.all([getInstance(id), getFormTemplates()]);
+      setInstance(inst);
+      setDefs(templates);
+      const token = await getToken();
+      if (token) {
+        try {
+          const decoded = jwtDecode<{ roles?: string[] }>(token);
+          if (decoded?.roles) setUserRoles(decoded.roles);
+        } catch {}
+      }
+    })();
+  }, [id]);
+
+  const def = useMemo(() => {
+    if (!instance || !defs.length) return null;
+    return (
+      defs.find((d: any) => d.formDefinitionId === instance.formDefinitionId) ||
+      defs.find((d: any) => d.formType === instance.formType)
+    );
+  }, [instance, defs]);
+
+  const workflow = def?.workflow || {};
+  const schema = def?.schema || [];
+
+  const editableSections: string[] = useMemo(() => {
+    const secs = Array.isArray(workflow.sections) ? workflow.sections : [];
+    return secs
+      .filter(
+        (s: any) =>
+          (!Array.isArray(s.visibleIn) || s.visibleIn.includes(instance?.currentState)) &&
+          Array.isArray(s.rolesCanEdit) &&
+          s.rolesCanEdit.some((r: string) => userRoles.includes(r)),
+      )
+      .map((s: any) => s.key);
+  }, [workflow, instance, userRoles]);
+
+  useEffect(() => {
+    if (!activeSection && editableSections.length) setActiveSection(editableSections[0]);
+  }, [editableSections, activeSection]);
+
+  const fieldsForActive = useMemo(() => {
+    const section = schema.find((s: any) => s.key === activeSection);
+    return section?.fields ?? [];
+  }, [schema, activeSection]);
+
+  async function enqueueSave(item: any) {
+    const raw = await AsyncStorage.getItem(queueKey);
+    const arr = raw ? JSON.parse(raw) : [];
+    arr.push(item);
+    await AsyncStorage.setItem(queueKey, JSON.stringify(arr));
+  }
+
+  async function drainQueue() {
+    const raw = await AsyncStorage.getItem(queueKey);
+    let queue = raw ? (JSON.parse(raw) as any[]) : [];
+    while (queue.length) {
+      const item = queue[0];
+      try {
+        const updated = await saveSection({ id, ...item });
+        queue.shift();
+        await AsyncStorage.setItem(queueKey, JSON.stringify(queue));
+        setInstance(updated);
+      } catch (e: any) {
+        if (e.message === 'Version conflict') {
+          const latest = await getInstance(id);
+          setInstance(latest);
+          item.etag = latest.etag;
+          await AsyncStorage.setItem(queueKey, JSON.stringify(queue));
+        } else {
+          break;
+        }
+      }
+    }
+  }
+
+  useEffect(() => {
+    if (isOnline) {
+      drainQueue().catch(() => {});
+    }
+  }, [isOnline]);
+
+  function localUpdate(path: (string | number)[], value: any) {
+    setInstance((prev: any) => {
+      if (!prev) return prev;
+      const data = { ...(prev.data || {}) };
+      let curr: any = data;
+      for (let i = 0; i < path.length - 1; i++) {
+        const key = String(path[i]);
+        curr[key] = curr[key] ? { ...curr[key] } : {};
+        curr = curr[key];
+      }
+      curr[String(path[path.length - 1])] = value;
+      return { ...prev, data };
+    });
+  }
+
+  async function handleFieldChange(path: (string | number)[], value: any) {
+    if (!instance) return;
+    localUpdate(path, value);
+    const sectionKey = String(path[0]);
+    const fieldKey = String(path[path.length - 1]);
+    const escape = (s: string) => s.replace(/~/g, '~0').replace(/\//g, '~1');
+    const ptr = `/${escape(sectionKey)}/${escape(fieldKey)}`;
+    const patch = [{ op: 'add', path: ptr, value }];
+    const idem = uuidv4();
+
+    if (isOnline && editableSections.includes(sectionKey)) {
+      try {
+        const updated = await saveSection({
+          id,
+          sectionKey,
+          patch,
+          etag: instance.etag,
+          idempotencyKey: idem,
+        });
+        setInstance(updated);
+        if (updated.validation && !updated.validation.ok) {
+          const errs: Record<string, string> = {};
+          Object.entries(updated.validation.errors || {}).forEach(([k, v]) => {
+            errs[k] = Array.isArray(v) ? v.join(', ') : String(v);
+          });
+          setValidationErrors(errs);
+        } else {
+          setValidationErrors({});
+        }
+      } catch (e: any) {
+        if (e.message === 'Version conflict') {
+          const latest = await getInstance(id);
+          setInstance(latest);
+          Alert.alert('Updated', 'This form was updated elsewhere. Showing latest.');
+        } else {
+          Alert.alert('Save failed', String(e));
+        }
+      }
+    } else {
+      await enqueueSave({
+        sectionKey,
+        patch,
+        etag: instance.etag,
+        idempotencyKey: idem,
+      });
+    }
+  }
+
+  const availableTransitions = useMemo(() => {
+    const t = Array.isArray(workflow.transitions) ? workflow.transitions : [];
+    return t.filter(
+      (x: any) =>
+        (x.from ? x.from === instance?.currentState : true) &&
+        (!Array.isArray(x.roles) || x.roles.some((r: string) => userRoles.includes(r))),
+    );
+  }, [workflow, instance, userRoles]);
+
+  async function handleTransition(transitionKey: string) {
+    try {
+      const res = await transitionInstance({ id, transitionKey, etag: instance.etag });
+      setInstance(res);
+    } catch (e: any) {
+      if (e.message === 'Version conflict') {
+        const latest = await getInstance(id);
+        setInstance(latest);
+        Alert.alert('Updated', 'Version conflict. Reloaded latest.');
+      } else {
+        Alert.alert('Transition failed', String(e));
+      }
+    }
+  }
+
+  return (
+    <View style={{ flex: 1 }}>
+      <Appbar.Header>
+        <Appbar.BackAction onPress={() => navigation.goBack()} />
+        <Appbar.Content
+          title={def?.name ?? 'Form'}
+          subtitle={`${instance?.currentState ?? ''} • v${instance?.version ?? ''}`}
+        />
+      </Appbar.Header>
+
+      {editableSections.length > 0 && (
+        <SegmentedButtons
+          value={activeSection}
+          onValueChange={setActiveSection}
+          buttons={editableSections.map((k) => ({ value: k, label: k }))}
+          style={{ margin: 12 }}
+        />
+      )}
+
+      <View style={{ flex: 1, padding: 12 }}>
+        {fieldsForActive.map((field: any) => (
+          <FieldRenderer
+            key={field.key}
+            field={field}
+            path={[activeSection as string, field.key]}
+            formState={instance?.data || {}}
+            localContext={{}}
+            activeDateKey={null}
+            setActiveDateKey={() => {}}
+            handleChange={handleFieldChange}
+            readOnly={!editableSections.includes(activeSection as string)}
+            error={validationErrors[`${activeSection}.${field.key}`]}
+            registerFieldPosition={() => {}}
+          />
+        ))}
+      </View>
+
+      <View style={{ padding: 12 }}>
+        {availableTransitions.map((t: any) => (
+          <Button
+            key={t.key}
+            mode="contained"
+            style={{ marginBottom: 8 }}
+            onPress={() => handleTransition(t.key)}
+          >
+            {t.key}
+          </Button>
+        ))}
+      </View>
+    </View>
+  );
+}

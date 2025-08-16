@@ -12,7 +12,7 @@ jest.mock('@/services/draftService', () => ({
 
 jest.mock('@/hooks/useAvailableForms', () => ({
   useAvailableForms: () => [
-    { key: 'TEST', label: 'Test Form', icon: 'file-plus', routeName: 'CreateFormScreen' },
+    { key: 'TEST', label: 'Test Form', icon: 'file-plus', formType: 'TEST', version: 1 },
   ],
 }));
 
@@ -21,12 +21,13 @@ jest.mock('@react-navigation/native', () => {
   return {
     ...actual,
     useNavigation: () => ({ navigate: jest.fn() }),
-    useFocusEffect: (fn: any) => fn(),
+    useFocusEffect: (fn: any) => { setTimeout(fn, 0); },
   };
 });
 
 describe('DraftsScreen', () => {
   it('renders FAB group', () => {
+    jest.useFakeTimers();
     const { getByTestId } = render(
       <FormCountsProvider>
         <PaperProvider>
@@ -34,6 +35,9 @@ describe('DraftsScreen', () => {
         </PaperProvider>
       </FormCountsProvider>
     );
+    act(() => {
+      jest.runAllTimers();
+    });
     expect(getByTestId('fab-group-create')).toBeTruthy();
   });
 });
