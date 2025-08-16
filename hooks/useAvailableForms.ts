@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
 import { getFormTemplates, type FormTemplate } from '@/services/formTemplateService';
+import { useEffect, useMemo, useState } from 'react';
 
 export type AddableForm = {
   key: string;
@@ -26,8 +26,8 @@ export function useAvailableForms(): AddableForm[] {
           key: t.id,
           label: t.name,
           icon: 'file-plus',
-          routeName: 'CreateFormScreen',
-          params: { formType: t.id },
+          routeName: 'FormScreen',
+          params: { schema: t.schema, formType: t.id, formName: t.name },
           enabled: true,
         }))
         .filter((f) => f.enabled !== false),

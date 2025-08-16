@@ -20,7 +20,6 @@ import type {
   DraftsStackParamList,
   RootStackParamList,
 } from "@/navigation/types";
-import CreateFormScreen from "@/screens/CreateFormScreen";
 import DraftsScreen from "@/screens/DraftsScreen";
 import EmbeddedFormScreen from "@/screens/EmbeddedFormScreen";
 import FormBuilderScreen from "@/screens/FormBuilderScreen";
@@ -206,11 +205,6 @@ export default function App() {
               name="MainTabs"
               component={MainTabNavigator}
               options={{ headerShown: false }}
-            />
-            <RootStack.Screen
-              name="CreateFormScreen"
-              component={CreateFormScreen}
-              options={{ title: "Create Form" }}
             />
             <RootStack.Screen
               name="FormScreen"

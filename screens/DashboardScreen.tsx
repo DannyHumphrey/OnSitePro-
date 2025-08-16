@@ -1,13 +1,13 @@
-import React from 'react';
+import { useAvailableForms } from '@/hooks/useAvailableForms';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
-import { View, StyleSheet } from 'react-native';
-import { Card, FAB, Portal, useTheme } from 'react-native-paper';
-import { useAvailableForms } from '@/hooks/useAvailableForms';
+import React from 'react';
+import { StyleSheet, View } from 'react-native';
+import { Card, useTheme } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { useFormCounts } from '@/context/FormCountsContext';
 import { spacing } from '@/constants/styles';
+import { useFormCounts } from '@/context/FormCountsContext';
 
 export default function DashboardScreen() {
   const navigation = useNavigation();
@@ -31,37 +31,6 @@ export default function DashboardScreen() {
         <Card style={styles.card} onPress={() => navigation.navigate('SentTab' as never)}>
           <Card.Title title="Sent" left={() => <MaterialIcons name="send" size={24} />} subtitle={`Items: ${counts.sent}`} />
         </Card>
-        <Portal>
-          <FAB.Group
-            testID="fab-group-create"
-            open={open}
-            visible
-            icon={open ? 'close' : 'plus'}
-            actions={forms.map((f) => ({
-              icon: f.icon || 'file-plus',
-              label: f.label,
-              onPress: () => {
-                setOpen(false);
-                navigation.navigate(f.routeName as never, (f.params ?? {}) as never);
-              },
-              accessibilityLabel: `Add ${f.label}`,
-              testID: `fab-action-${f.key}`,
-              labelTextColor: theme.colors.onSecondaryContainer,
-              small: false,
-            }))}
-            onStateChange={({ open }) => setOpen(open)}
-            onPress={() => {
-              if (forms.length === 1) {
-                const f = forms[0];
-                navigation.navigate(f.routeName as never, (f.params ?? {}) as never);
-              } else {
-                setOpen(!open);
-              }
-            }}
-            fabStyle={styles.fab}
-            accessibilityLabel="Create new item"
-          />
-        </Portal>
       </View>
     </SafeAreaView>
   );
