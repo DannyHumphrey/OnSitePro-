@@ -30,6 +30,8 @@ import OutboxScreen from "@/screens/OutboxScreen";
 import SentScreen from "@/screens/SentScreen";
 import SettingsScreen from "@/screens/SettingsScreen";
 import { cleanupOldSentForms } from "@/services/sentService";
+import MyTasksScreen from "@/screens/MyTasksScreen";
+import FormInstanceScreen from "@/screens/FormInstanceScreen";
 
 const RootStack = createNativeStackNavigator<RootStackParamList>();
 const DraftsStack = createNativeStackNavigator<DraftsStackParamList>();
@@ -75,6 +77,7 @@ function MainTabNavigator() {
       focusedIcon: "application-edit",
       badge: counts.drafts,
     },
+    { key: "tasks", title: "My Tasks", focusedIcon: "clipboard-check" },
     {
       key: "outbox",
       title: "Outbox",
@@ -88,6 +91,7 @@ function MainTabNavigator() {
   const renderScene = BottomNavigation.SceneMap({
     inbox: InboxScreen,
     drafts: DraftsTabNavigator,
+    tasks: MyTasksScreen,
     outbox: OutboxScreen,
     sent: SentScreen,
     settings: SettingsScreen,
@@ -220,6 +224,11 @@ export default function App() {
               name="FormBuilderScreen"
               component={FormBuilderScreen}
               options={{ title: "Form Builder" }}
+            />
+            <RootStack.Screen
+              name="FormInstance"
+              component={FormInstanceScreen}
+              options={{ headerShown: false }}
             />
           </RootStack.Navigator>
           <Modal transparent visible={sessionExpired} animationType="fade">

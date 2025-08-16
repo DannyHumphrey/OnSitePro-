@@ -8,6 +8,7 @@ export type DraftsStackParamList = {
 export type MainTabParamList = {
   DraftsTab: NavigatorScreenParams<DraftsStackParamList>;
   InboxTab: undefined;
+  MyTasksTab: undefined;
   OutboxTab: undefined;
   SentTab: undefined;
   SettingsTab: undefined;
@@ -31,4 +32,5 @@ export type RootStackParamList = {
     readOnly?: boolean | string;
   };
   FormBuilderScreen: undefined;
+  FormInstance: { id: number; sectionKey?: string };
 };

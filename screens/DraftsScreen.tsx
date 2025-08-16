@@ -5,6 +5,7 @@ import * as FileSystem from "expo-file-system";
 import { useCallback, useState } from "react";
 import { Alert, FlatList, StyleSheet, View } from "react-native";
 import { Card, FAB, IconButton, Portal, TextInput, useTheme } from "react-native-paper";
+import { createInstance } from "@/api/formsApi";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { ThemedText } from "@/components/ThemedText";
@@ -178,9 +179,14 @@ export default function DraftsScreen() {
               actions={forms.map((f) => ({
                 icon: f.icon || "file-plus",
                 label: f.label,
-                onPress: () => {
+                onPress: async () => {
                   setFabOpen(false);
-                  navigation.navigate("FormScreen", (f.params ?? {}) as never);
+                  try {
+                    const created = await createInstance(f.formType, f.version);
+                    navigation.navigate("FormInstance", { id: created.formInstanceId });
+                  } catch {
+                    Alert.alert("Error", "Failed to create form instance");
+                  }
                 },
                 accessibilityLabel: `Add ${f.label}`,
                 testID: `fab-action-${f.key}`,
