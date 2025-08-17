@@ -23,7 +23,6 @@ export const FormRenderer = forwardRef<FormRendererRef, FormRendererProps>(
       formState,
       setFormState,
       formErrors,
-      setFormState,
       setFormErrors,
       instanceIds,
       setInstanceIds,

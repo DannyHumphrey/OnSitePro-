@@ -1,34 +1,58 @@
-import { getFormTemplates, getInstance, saveSection, transitionInstance } from '@/api/formsApi';
-import { FieldRenderer } from '@/components/formRenderer/fields/FieldRenderer';
-import { useNetworkStatus } from '@/hooks/useNetworkStatus';
-import { getToken } from '@/services/authService';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import jwtDecode from 'jwt-decode';
-import { useEffect, useMemo, useState } from 'react';
-import { Alert, ScrollView, View } from 'react-native';
-import { Appbar, Button, SegmentedButtons } from 'react-native-paper';
-import { v4 as uuidv4 } from 'uuid';
+import {
+  getFormTemplates,
+  getInstance,
+  saveSection,
+  transitionInstance,
+} from "@/api/formsApi";
+import { useNetworkStatus } from "@/hooks/useNetworkStatus";
+import { getToken } from "@/services/authService";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { applyPatch } from "fast-json-patch";
+import jwtDecode from "jwt-decode";
+import { useEffect, useMemo, useState } from "react";
+import { Alert, View } from "react-native";
+import { Appbar, Button } from "react-native-paper";
+import { v4 as uuidv4 } from "uuid";
+import { InstanceFormRenderer } from "../components/formRenderer/InstnaceFormRenderer";
 
 export default function FormInstanceScreen({ route, navigation }: any) {
   const { id, sectionKey: initialSection } = route.params;
   const [instance, setInstance] = useState<any>(null);
   const [defs, setDefs] = useState<any[]>([]);
-  const [activeSection, setActiveSection] = useState<string | undefined>(initialSection);
-  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+  const [activeSection, setActiveSection] = useState<string | undefined>(
+    initialSection
+  );
+  const [validationErrors, setValidationErrors] = useState<
+    Record<string, string>
+  >({});
   const [userRoles, setUserRoles] = useState<string[]>([]);
   const isOnline = useNetworkStatus();
   const queueKey = `queue:form:${id}`;
 
   useEffect(() => {
     (async () => {
-      const [inst, templates] = await Promise.all([getInstance(id), getFormTemplates()]);
+      const [inst, templates] = await Promise.all([
+        getInstance(id),
+        getFormTemplates(),
+      ]);
       setInstance(inst);
       setDefs(templates);
       const token = await getToken();
       if (token) {
         try {
-          const decoded = jwtDecode<{ ['http://schemas.microsoft.com/ws/2008/06/identity/claims/role']?: string[] }>(token);
-          if (decoded['http://schemas.microsoft.com/ws/2008/06/identity/claims/role']) setUserRoles(decoded['http://schemas.microsoft.com/ws/2008/06/identity/claims/role']);
+          const decoded = jwtDecode<{
+            ["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"]?: string[];
+          }>(token);
+          if (
+            decoded[
+              "http://schemas.microsoft.com/ws/2008/06/identity/claims/role"
+            ]
+          )
+            setUserRoles(
+              decoded[
+                "http://schemas.microsoft.com/ws/2008/06/identity/claims/role"
+              ]
+            );
         } catch {}
       }
     })();
@@ -50,21 +74,18 @@ export default function FormInstanceScreen({ route, navigation }: any) {
     return secs
       .filter(
         (s: any) =>
-          (!Array.isArray(s.visibleIn) || s.visibleIn.includes(instance?.currentState)) &&
+          (!Array.isArray(s.visibleIn) ||
+            s.visibleIn.includes(instance?.currentState)) &&
           Array.isArray(s.rolesCanEdit) &&
-          s.rolesCanEdit.some((r: string) => userRoles.includes(r)),
+          s.rolesCanEdit.some((r: string) => userRoles.includes(r))
       )
       .map((s: any) => s.key);
   }, [workflow, instance, userRoles]);
 
   useEffect(() => {
-    if (!activeSection && editableSections.length) setActiveSection(editableSections[0]);
+    if (!activeSection && editableSections.length)
+      setActiveSection(editableSections[0]);
   }, [editableSections, activeSection]);
-
-  const fieldsForActive = useMemo(() => {
-    const section = schema.find((s: any) => s.key === activeSection);
-    return section?.fields ?? [];
-  }, [schema, activeSection]);
 
   async function enqueueSave(item: any) {
     const raw = await AsyncStorage.getItem(queueKey);
@@ -82,9 +103,14 @@ export default function FormInstanceScreen({ route, navigation }: any) {
         const updated = await saveSection({ id, ...item });
         queue.shift();
         await AsyncStorage.setItem(queueKey, JSON.stringify(queue));
-        setInstance({...updated, data: updated.data, currentState: updated.state, etag: updated.etag, });
+        setInstance({
+          ...updated,
+          data: updated.data,
+          currentState: updated.state,
+          etag: updated.etag,
+        });
       } catch (e: any) {
-        if (e.message === 'Version conflict') {
+        if (e.message === "Version conflict") {
           const latest = await getInstance(id);
           setInstance(latest);
           item.etag = latest.etag;
@@ -117,15 +143,50 @@ export default function FormInstanceScreen({ route, navigation }: any) {
     });
   }
 
-  async function handleFieldChange(path: (string | number)[], value: any) {
+  const availableTransitions = useMemo(() => {
+    const t = Array.isArray(workflow.transitions) ? workflow.transitions : [];
+    return t.filter(
+      (x: any) =>
+        (x.from ? x.from === instance?.currentState : true) &&
+        (!Array.isArray(x.roles) ||
+          x.roles.some((r: string) => userRoles.includes(r)))
+    );
+  }, [workflow, instance, userRoles]);
+
+  async function handleTransition(transitionKey: string) {
+    try {
+      const res = await transitionInstance({
+        id,
+        transitionKey,
+        etag: instance.etag,
+      });
+      setInstance(res);
+    } catch (e: any) {
+      if (e.message === "Version conflict") {
+        const latest = await getInstance(id);
+        setInstance(latest);
+        Alert.alert("Updated", "Version conflict. Reloaded latest.");
+      } else {
+        Alert.alert("Transition failed", String(e));
+      }
+    }
+  }
+
+  async function onPatch(sectionKey: string, patch: any[]) {
     if (!instance) return;
-    localUpdate(path, value);
-    const sectionKey = String(path[0]);
-    const fieldKey = String(path[path.length - 1]);
-    const escape = (s: string) => s.replace(/~/g, '~0').replace(/\//g, '~1');
-    const ptr = `/${escape(sectionKey)}/${escape(fieldKey)}`;
-    const patch = [{ op: 'add', path: ptr, value }];
     const idem = uuidv4();
+
+    // optimistic local apply so UI feels instant
+    try {
+      const nextDoc = applyPatch(
+        instance.data || {},
+        patch,
+        /*validate*/ false
+      ).newDocument;
+      setInstance((prev: any) => ({ ...prev, data: nextDoc }));
+    } catch {
+      // non-fatal if patch library not perfect for some paths
+    }
 
     if (isOnline && editableSections.includes(sectionKey)) {
       try {
@@ -136,28 +197,27 @@ export default function FormInstanceScreen({ route, navigation }: any) {
           etag: instance.etag,
           idempotencyKey: idem,
         });
-        
-        setInstance({...instance, data: updated.data, currentState: updated.state, etag: updated.etag, });
-
-        if (updated.validation && !updated.validation.ok) {
-          const errs: Record<string, string> = {};
-          Object.entries(updated.validation.errors || {}).forEach(([k, v]) => {
-            errs[k] = Array.isArray(v) ? v.join(', ') : String(v);
-          });
-          setValidationErrors(errs);
-        } else {
-          setValidationErrors({});
-        }
+        setInstance({
+          ...instance,
+          data: updated.data,
+          currentState: updated.state,
+          etag: updated.etag,
+        });
+        // handle validation if you want (same as before)
       } catch (e: any) {
-        if (e.message === 'Version conflict') {
+        if (e.message === "Version conflict") {
           const latest = await getInstance(id);
           setInstance(latest);
-          Alert.alert('Updated', 'This form was updated elsewhere. Showing latest.');
+          Alert.alert(
+            "Updated",
+            "This form was updated elsewhere. Showing latest."
+          );
         } else {
-          Alert.alert('Save failed', String(e));
+          Alert.alert("Save failed", String(e));
         }
       }
     } else {
+      // offline: enqueue with the *current* etag
       await enqueueSave({
         sectionKey,
         patch,
@@ -167,66 +227,21 @@ export default function FormInstanceScreen({ route, navigation }: any) {
     }
   }
 
-  const availableTransitions = useMemo(() => {
-    const t = Array.isArray(workflow.transitions) ? workflow.transitions : [];
-    return t.filter(
-      (x: any) =>
-        (x.from ? x.from === instance?.currentState : true) &&
-        (!Array.isArray(x.roles) || x.roles.some((r: string) => userRoles.includes(r))),
-    );
-  }, [workflow, instance, userRoles]);
-
-  async function handleTransition(transitionKey: string) {
-    try {
-      const res = await transitionInstance({ id, transitionKey, etag: instance.etag });
-      setInstance(res);
-    } catch (e: any) {
-      if (e.message === 'Version conflict') {
-        const latest = await getInstance(id);
-        setInstance(latest);
-        Alert.alert('Updated', 'Version conflict. Reloaded latest.');
-      } else {
-        Alert.alert('Transition failed', String(e));
-      }
-    }
-  }
+  async function doNothing() {}
 
   return (
     <View style={{ flex: 1 }}>
       <Appbar.Header>
         <Appbar.BackAction onPress={() => navigation.goBack()} />
-        <Appbar.Content
-          title={def?.name ?? 'Form'}
-          subtitle={`${instance?.currentState ?? ''} • v${instance?.version ?? ''}`}
-        />
+        <Appbar.Content title={def?.name ?? "Form"} />
       </Appbar.Header>
 
-      {editableSections.length > 0 && activeSection && (
-        <SegmentedButtons
-          value={activeSection}
-          onValueChange={setActiveSection}
-          buttons={editableSections.map((k) => ({ value: k, label: k }))}
-          style={{ margin: 12 }}
-        />
-      )}
-
-      <ScrollView style={{ flex: 1, padding: 12 }}>
-        {fieldsForActive.map((field: any) => (
-          <FieldRenderer
-            key={field.key}
-            field={field}
-            path={[activeSection as string, field.key]}
-            formState={instance?.data || {}}
-            localContext={{}}
-            activeDateKey={null}
-            setActiveDateKey={() => {}}
-            handleChange={handleFieldChange}
-            readOnly={!editableSections.includes(activeSection as string)}
-            error={validationErrors[`${activeSection}.${field.key}`]}
-            registerFieldPosition={() => {}}
-          />
-        ))}
-      </ScrollView>
+      <InstanceFormRenderer
+        schema={schema}
+        data={instance?.data || {}}
+        editableSections={editableSections}
+        onPatch={onPatch}
+      />
 
       <View style={{ padding: 12 }}>
         {availableTransitions.map((t: any) => (

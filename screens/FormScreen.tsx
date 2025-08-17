@@ -8,27 +8,26 @@ import {
   ScrollView,
   StyleSheet,
   TouchableOpacity,
-  View
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { v4 as uuidv4 } from "uuid";
 
-import FormRenderer, { type FormRendererRef } from '@/components/formRenderer';
-import { ThemedText } from '@/components/ThemedText';
-import { IconSymbol } from '@/components/ui/IconSymbol';
-import { Colors } from '@/constants/Colors';
-import { spacing } from '@/constants/styles';
-import { useColorScheme } from '@/hooks/useColorScheme';
-import { useNetworkStatus } from '@/hooks/useNetworkStatus';
+import FormRenderer, { type FormRendererRef } from "@/components/formRenderer";
+import { ThemedText } from "@/components/ThemedText";
+import { IconSymbol } from "@/components/ui/IconSymbol";
+import { Colors } from "@/constants/Colors";
+import { spacing } from "@/constants/styles";
+import { useColorScheme } from "@/hooks/useColorScheme";
+import { useNetworkStatus } from "@/hooks/useNetworkStatus";
 import { RootStackParamList } from "@/navigation/types";
 import {
   getDraftById,
   saveDraft,
   type DraftForm,
-} from '@/services/draftService';
-import React from 'react';
+} from "@/services/draftService";
+import React from "react";
 import { Button, Modal, PaperProvider } from "react-native-paper";
-
 
 type OutboxForm = Omit<DraftForm, "status"> & {
   status: "complete";
@@ -246,127 +245,136 @@ export default function FormScreen({ route, navigation }: Props) {
 
   return (
     <PaperProvider>
-    <SafeAreaView style={{ flex: 1 }}>
-    <KeyboardAvoidingView
-      style={{ flex: 1 }}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      keyboardVerticalOffset={80}
-    >
-      <View style={styles.buttonRow}>
-        <TouchableOpacity onPress={() => setMenuVisible(true)}>
-          <IconSymbol
-            name="line.3.horizontal"
-            size={24}
-            color={Colors[colorScheme].text}
-          />
-        </TouchableOpacity>
-      </View>
-      <ScrollView
-        contentContainerStyle={styles.contentContainer}
-        keyboardShouldPersistTaps="handled"
-      >
-        <View style={styles.header}>
-          <ThemedText style={styles.title}>Title: {formName}</ThemedText>
-        </View>
-
-          {!isOnline && (
-            <ThemedText style={styles.offlineText}>
-              You are offline. Submissions are disabled.
-            </ThemedText>
-          )}
-          <FormRenderer
-            ref={formRef}
-            schema={schema}
-            initialData={initialData}
-            readOnly={readOnly}
-          />
-        </ScrollView>
-      </KeyboardAvoidingView>
-      <View style={styles.buttonRow}>
-        <View style={styles.buttonWrapper}>
-          <Button style={styles.button} onPress={() => navigation.goBack()} mode='contained'>Back</Button>
-        </View>
-        {!readOnly && (
-          <>
-            <View style={styles.buttonWrapper}>
-              <Button style={styles.button} onPress={handleSaveDraft} mode='contained'>Save</Button>
-            </View>
-            <View style={styles.buttonWrapper}>
-              <Button
-                onPress={handleSubmitForm}
-                disabled={!isOnline}
-                style={styles.button}
-                mode='contained'
-              >
-                Submit
-              </Button>
-            </View>
-          </>
-        )}
-      </View>
-    </SafeAreaView>
-    <Modal
-        visible={menuVisible}
-        onDismiss={() => setMenuVisible(false)}
-      >
-          <View
-            style={[
-              styles.drawer,
-              { backgroundColor: Colors[colorScheme].background },
-            ]}
-          >
-            <View style={styles.tabRow}>
-              <TouchableOpacity
-                style={[
-                  styles.tabButton,
-                  menuTab === "sections" && styles.activeTab,
-                ]}
-                onPress={() => setMenuTab("sections")}
-              >
-                <ThemedText>Sections</ThemedText>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  styles.tabButton,
-                  menuTab === "media" && styles.activeTab,
-                ]}
-                onPress={() => setMenuTab("media")}
-              >
-                <ThemedText>Media</ThemedText>
-              </TouchableOpacity>
-            </View>
-            {menuTab === "sections" ? (
-              <ScrollView>
-                {sectionEntries.map((item) => (
-                  <TouchableOpacity
-                    key={item.key}
-                    style={styles.menuItem}
-                    onPress={() => handleSectionPress(item.key)}
-                  >
-                    <ThemedText>{item.label}</ThemedText>
-                    {sectionErrors[item.key] && (
-                      <IconSymbol
-                        name="exclamationmark.circle.fill"
-                        size={16}
-                        color="red"
-                      />
-                    )}
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-            ) : (
-              <ScrollView contentContainerStyle={styles.mediaList}>
-                {photos.map((p) => (
-                  <TouchableOpacity
-                    key={p.key}
-                    onPress={() => handleMediaPress(p.key)}
-                  >
-                    <Image source={{ uri: p.uri }} style={styles.mediaThumb} />
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-            )}
+      <SafeAreaView style={{ flex: 1 }}>
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          keyboardVerticalOffset={80}
+        >
+          <View style={styles.buttonRow}>
+            <TouchableOpacity onPress={() => setMenuVisible(true)}>
+              <IconSymbol
+                name="line.3.horizontal"
+                size={24}
+                color={Colors[colorScheme].text}
+              />
+            </TouchableOpacity>
           </View>
+          <ScrollView
+            contentContainerStyle={styles.contentContainer}
+            keyboardShouldPersistTaps="handled"
+          >
+            <View style={styles.header}>
+              <ThemedText style={styles.title}>Title: {formName}</ThemedText>
+            </View>
+
+            {!isOnline && (
+              <ThemedText style={styles.offlineText}>
+                You are offline. Submissions are disabled.
+              </ThemedText>
+            )}
+            <FormRenderer
+              ref={formRef}
+              schema={schema}
+              initialData={initialData}
+              readOnly={readOnly}
+            />
+          </ScrollView>
+        </KeyboardAvoidingView>
+        <View style={styles.buttonRow}>
+          <View style={styles.buttonWrapper}>
+            <Button
+              style={styles.button}
+              onPress={() => navigation.goBack()}
+              mode="contained"
+            >
+              Back
+            </Button>
+          </View>
+          {!readOnly && (
+            <>
+              <View style={styles.buttonWrapper}>
+                <Button
+                  style={styles.button}
+                  onPress={handleSaveDraft}
+                  mode="contained"
+                >
+                  Save
+                </Button>
+              </View>
+              <View style={styles.buttonWrapper}>
+                <Button
+                  onPress={handleSubmitForm}
+                  disabled={!isOnline}
+                  style={styles.button}
+                  mode="contained"
+                >
+                  Submit
+                </Button>
+              </View>
+            </>
+          )}
+        </View>
+      </SafeAreaView>
+      <Modal visible={menuVisible} onDismiss={() => setMenuVisible(false)}>
+        <View
+          style={[
+            styles.drawer,
+            { backgroundColor: Colors[colorScheme].background },
+          ]}
+        >
+          <View style={styles.tabRow}>
+            <TouchableOpacity
+              style={[
+                styles.tabButton,
+                menuTab === "sections" && styles.activeTab,
+              ]}
+              onPress={() => setMenuTab("sections")}
+            >
+              <ThemedText>Sections</ThemedText>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.tabButton,
+                menuTab === "media" && styles.activeTab,
+              ]}
+              onPress={() => setMenuTab("media")}
+            >
+              <ThemedText>Media</ThemedText>
+            </TouchableOpacity>
+          </View>
+          {menuTab === "sections" ? (
+            <ScrollView>
+              {sectionEntries.map((item) => (
+                <TouchableOpacity
+                  key={item.key}
+                  style={styles.menuItem}
+                  onPress={() => handleSectionPress(item.key)}
+                >
+                  <ThemedText>{item.label}</ThemedText>
+                  {sectionErrors[item.key] && (
+                    <IconSymbol
+                      name="exclamationmark.circle.fill"
+                      size={16}
+                      color="red"
+                    />
+                  )}
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          ) : (
+            <ScrollView contentContainerStyle={styles.mediaList}>
+              {photos.map((p) => (
+                <TouchableOpacity
+                  key={p.key}
+                  onPress={() => handleMediaPress(p.key)}
+                >
+                  <Image source={{ uri: p.uri }} style={styles.mediaThumb} />
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          )}
+        </View>
       </Modal>
     </PaperProvider>
   );
@@ -440,7 +448,7 @@ const styles = StyleSheet.create({
   },
   button: {
     marginTop: spacing.md,
-    backgroundColor: 'rgba(56,69,74,1)',
-    borderRadius: 3
+    backgroundColor: "rgba(56,69,74,1)",
+    borderRadius: 3,
   },
 });

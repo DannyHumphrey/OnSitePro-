@@ -190,7 +190,6 @@ export default function DraftsScreen() {
                 },
                 accessibilityLabel: `Add ${f.label}`,
                 testID: `fab-action-${f.key}`,
-                // Avoid labelTextColor if it throws in your paper version; optional.
                 small: false,
               }))}
               onStateChange={({ open }) => setFabOpen(open)}
@@ -198,8 +197,7 @@ export default function DraftsScreen() {
               }}
               // Use container style, not fabStyle
               style={styles.fabGroup}
-              // Optional: make the backdrop transparent so you can see the list while open
-              // backdropColor="transparent"
+              backdropColor="transparent"
               accessibilityLabel="Create new item"
             />
         </Portal>
