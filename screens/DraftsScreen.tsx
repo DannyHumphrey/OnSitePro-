@@ -1,3 +1,4 @@
+import { createInstance } from "@/api/formsApi";
 import { useAvailableForms } from "@/hooks/useAvailableForms";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
@@ -5,7 +6,6 @@ import * as FileSystem from "expo-file-system";
 import { useCallback, useState } from "react";
 import { Alert, FlatList, StyleSheet, View } from "react-native";
 import { Card, FAB, IconButton, Portal, TextInput, useTheme } from "react-native-paper";
-import { createInstance } from "@/api/formsApi";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { ThemedText } from "@/components/ThemedText";
@@ -65,7 +65,7 @@ export default function DraftsScreen() {
 
   const collectImageUris = (obj: any): string[] => {
     if (!obj) return [];
-    if (typeof obj === "string") {
+    if (typeof obj === "string" && FileSystem.documentDirectory) {
       return obj.startsWith(FileSystem.documentDirectory) ? [obj] : [];
     }
     if (Array.isArray(obj)) {
