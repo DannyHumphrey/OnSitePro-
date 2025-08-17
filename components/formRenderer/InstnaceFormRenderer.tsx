@@ -44,7 +44,7 @@ export type InstanceFormRendererProps = {
   readOnlyGlobal?: boolean; // optional global read-only
   onPatch: (sectionKey: string, patch: any[]) => Promise<void>; // caller handles API/ETag/queue
 };
-const DEBOUNCE_MS = 500;
+const DEBOUNCE_MS = 250;
 
 export const InstanceFormRenderer = ({
   schema,

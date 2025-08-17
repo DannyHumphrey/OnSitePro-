@@ -227,8 +227,6 @@ export default function FormInstanceScreen({ route, navigation }: any) {
     }
   }
 
-  async function doNothing() {}
-
   return (
     <View style={{ flex: 1 }}>
       <Appbar.Header>
