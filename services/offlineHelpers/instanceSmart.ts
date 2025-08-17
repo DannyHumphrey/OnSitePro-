@@ -32,6 +32,19 @@ export async function createInstanceSmart(
       initialData,
       idempotencyKey
     );
+    let schema: any = [];
+    let workflow: any = {};
+    try {
+      const defs = await getFormTemplatesCached(true);
+      const def = defs.find(
+        (d: any) =>
+          d.formDefinitionId === created.formDefinitionId ||
+          (d.formType === formType &&
+            (formVersion == null || d.version === formVersion))
+      );
+      schema = def?.schema ?? [];
+      workflow = def?.workflow ?? {};
+    } catch {}
     const meta: LocalInstanceMeta = {
       id: String(created.formInstanceId),
       formType,
@@ -42,7 +55,8 @@ export async function createInstanceSmart(
       etag: created.etag,
       isLocal: false,
       createdAt: new Date().toISOString(),
-      schema: "",
+      schema,
+      workflow,
     };
     await AsyncStorage.setItem(K.InstanceMeta(meta.id), JSON.stringify(meta));
     await AsyncStorage.setItem(
@@ -55,6 +69,8 @@ export async function createInstanceSmart(
 
   const tmpId = `tmp_${uuidv4()}`;
   let currentState = "draft";
+  let schema: any = [];
+  let workflow: any = {};
   try {
     const defs = await getFormTemplatesCached(false);
     const def = defs.find(
@@ -64,6 +80,8 @@ export async function createInstanceSmart(
     );
     const wf = def?.workflow || {};
     currentState = wf.initial || wf.initialState || wf.start || currentState;
+    schema = def?.schema ?? [];
+    workflow = wf;
   } catch {}
 
   const meta: LocalInstanceMeta = {
@@ -76,7 +94,8 @@ export async function createInstanceSmart(
     etag: "",
     isLocal: true,
     createdAt: new Date().toISOString(),
-    schema: "",
+    schema,
+    workflow,
   };
 
   await AsyncStorage.setItem(K.InstanceMeta(tmpId), JSON.stringify(meta));
