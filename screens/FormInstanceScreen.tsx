@@ -201,7 +201,7 @@ export default function FormInstanceScreen({ route, navigation }: any) {
         />
       </Appbar.Header>
 
-      {editableSections.length > 0 && (
+      {editableSections.length > 0 && activeSection && (
         <SegmentedButtons
           value={activeSection}
           onValueChange={setActiveSection}
