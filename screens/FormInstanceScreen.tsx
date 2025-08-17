@@ -1,13 +1,13 @@
-import { useEffect, useMemo, useState } from 'react';
-import { View, Alert } from 'react-native';
-import { Appbar, Button, SegmentedButtons } from 'react-native-paper';
-import { getInstance, getFormTemplates, saveSection, transitionInstance } from '@/api/formsApi';
-import { v4 as uuidv4 } from 'uuid';
+import { getFormTemplates, getInstance, saveSection, transitionInstance } from '@/api/formsApi';
 import { FieldRenderer } from '@/components/formRenderer/fields/FieldRenderer';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
-import jwtDecode from 'jwt-decode';
 import { getToken } from '@/services/authService';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import jwtDecode from 'jwt-decode';
+import { useEffect, useMemo, useState } from 'react';
+import { Alert, ScrollView, View } from 'react-native';
+import { Appbar, Button, SegmentedButtons } from 'react-native-paper';
+import { v4 as uuidv4 } from 'uuid';
 
 export default function FormInstanceScreen({ route, navigation }: any) {
   const { id, sectionKey: initialSection } = route.params;
@@ -27,8 +27,8 @@ export default function FormInstanceScreen({ route, navigation }: any) {
       const token = await getToken();
       if (token) {
         try {
-          const decoded = jwtDecode<{ roles?: string[] }>(token);
-          if (decoded?.roles) setUserRoles(decoded.roles);
+          const decoded = jwtDecode<{ ['http://schemas.microsoft.com/ws/2008/06/identity/claims/role']?: string[] }>(token);
+          if (decoded['http://schemas.microsoft.com/ws/2008/06/identity/claims/role']) setUserRoles(decoded['http://schemas.microsoft.com/ws/2008/06/identity/claims/role']);
         } catch {}
       }
     })();
@@ -82,7 +82,7 @@ export default function FormInstanceScreen({ route, navigation }: any) {
         const updated = await saveSection({ id, ...item });
         queue.shift();
         await AsyncStorage.setItem(queueKey, JSON.stringify(queue));
-        setInstance(updated);
+        setInstance({...updated, data: updated.data, currentState: updated.state, etag: updated.etag, });
       } catch (e: any) {
         if (e.message === 'Version conflict') {
           const latest = await getInstance(id);
@@ -136,7 +136,9 @@ export default function FormInstanceScreen({ route, navigation }: any) {
           etag: instance.etag,
           idempotencyKey: idem,
         });
-        setInstance(updated);
+        
+        setInstance({...instance, data: updated.data, currentState: updated.state, etag: updated.etag, });
+
         if (updated.validation && !updated.validation.ok) {
           const errs: Record<string, string> = {};
           Object.entries(updated.validation.errors || {}).forEach(([k, v]) => {
@@ -208,7 +210,7 @@ export default function FormInstanceScreen({ route, navigation }: any) {
         />
       )}
 
-      <View style={{ flex: 1, padding: 12 }}>
+      <ScrollView style={{ flex: 1, padding: 12 }}>
         {fieldsForActive.map((field: any) => (
           <FieldRenderer
             key={field.key}
@@ -224,7 +226,7 @@ export default function FormInstanceScreen({ route, navigation }: any) {
             registerFieldPosition={() => {}}
           />
         ))}
-      </View>
+      </ScrollView>
 
       <View style={{ padding: 12 }}>
         {availableTransitions.map((t: any) => (

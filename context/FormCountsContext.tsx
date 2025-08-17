@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useState } from 'react';
 
 export type FormCounts = {
-  inbox: number;
   drafts: number;
   outbox: number;
   sent: number;
@@ -15,7 +14,7 @@ export type FormCountsContextValue = {
 const FormCountsContext = createContext<FormCountsContextValue | undefined>(undefined);
 
 export function FormCountsProvider({ children }: { children: React.ReactNode }) {
-  const [counts, setCounts] = useState<FormCounts>({ inbox: 0, drafts: 0, outbox: 0, sent: 0 });
+  const [counts, setCounts] = useState<FormCounts>({ drafts: 0, outbox: 0, sent: 0 });
   return (
     <FormCountsContext.Provider value={{ counts, setCounts }}>
       {children}

@@ -23,15 +23,14 @@ import type {
 import DraftsScreen from "@/screens/DraftsScreen";
 import EmbeddedFormScreen from "@/screens/EmbeddedFormScreen";
 import FormBuilderScreen from "@/screens/FormBuilderScreen";
+import FormInstanceScreen from "@/screens/FormInstanceScreen";
 import FormScreen from "@/screens/FormScreen";
-import InboxScreen from "@/screens/InboxScreen";
 import LoginScreen from "@/screens/LoginScreen";
+import MyTasksScreen from "@/screens/MyTasksScreen";
 import OutboxScreen from "@/screens/OutboxScreen";
 import SentScreen from "@/screens/SentScreen";
 import SettingsScreen from "@/screens/SettingsScreen";
 import { cleanupOldSentForms } from "@/services/sentService";
-import MyTasksScreen from "@/screens/MyTasksScreen";
-import FormInstanceScreen from "@/screens/FormInstanceScreen";
 
 const RootStack = createNativeStackNavigator<RootStackParamList>();
 const DraftsStack = createNativeStackNavigator<DraftsStackParamList>();
@@ -70,14 +69,13 @@ function MainTabNavigator() {
   const { counts } = useFormCounts();
   const [index, setIndex] = useState(0);
   const routes = [
-    { key: "inbox", title: "Inbox", focusedIcon: "inbox", badge: counts.inbox },
+    { key: "tasks", title: "Inbox", focusedIcon: "clipboard-check" },
     {
       key: "drafts",
       title: "Drafts",
       focusedIcon: "application-edit",
       badge: counts.drafts,
     },
-    { key: "tasks", title: "My Tasks", focusedIcon: "clipboard-check" },
     {
       key: "outbox",
       title: "Outbox",
@@ -89,7 +87,6 @@ function MainTabNavigator() {
   ];
 
   const renderScene = BottomNavigation.SceneMap({
-    inbox: InboxScreen,
     drafts: DraftsTabNavigator,
     tasks: MyTasksScreen,
     outbox: OutboxScreen,

@@ -1,5 +1,5 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { FormSchema } from '@/components/formRenderer/fields/types';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getToken } from './authService';
 
 export type FormTemplate = {
@@ -9,7 +9,7 @@ export type FormTemplate = {
 };
 
 import { FORM_API_BASE_URL } from '@/constants/api';
-const API_ENDPOINT = `${FORM_API_BASE_URL}/api/FormTemplates`;
+const API_ENDPOINT = `${FORM_API_BASE_URL}/api/formTemplates`;
 const CACHE_KEY = 'cached_form_types';
 const TIMESTAMP_KEY = 'cached_form_types_timestamp';
 const CACHE_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
