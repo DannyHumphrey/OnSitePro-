@@ -23,6 +23,15 @@ export type FormInstanceDto = {
 
 const base = Platform.OS === 'web' ? '/api' : `${FORM_API_BASE_URL}/api`;
 
+function extractEtag(r: Response, body: any): string {
+  const header = r.headers.get('ETag');
+  if (header) return header;
+  if (body?.etag) return body.etag;
+  const id = body?.formInstanceId ?? body?.id;
+  const version = body?.version;
+  return id !== undefined && version !== undefined ? `${id}:${version}` : '';
+}
+
 export async function getFormTemplates(): Promise<FormDefinition[]> {
   const token = await getToken();
   const r = await fetch(`${base}/formTemplates`, {
@@ -37,29 +46,37 @@ export async function createInstance(
   formType: string,
   formVersion?: number,
   initialData: any = {},
+  idempotencyKey?: string,
 ): Promise<FormInstanceDto> {
   const token = await getToken();
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${token}`,
+  };
+  if (idempotencyKey) headers['Idempotency-Key'] = idempotencyKey;
+  const bodyPayload: any = { formType, formVersion, initialData };
+  if (idempotencyKey) bodyPayload.clientGeneratedId = idempotencyKey;
   const r = await fetch(`${base}/form-instances`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-    body: JSON.stringify({ formType, formVersion, initialData }),
+    headers,
+    body: JSON.stringify(bodyPayload),
   });
   if (!r.ok) throw new Error('Failed to create instance');
-  const etag = r.headers.get('ETag') ?? '';
   const body = await r.json();
+  const etag = extractEtag(r, body);
   return { ...body, etag };
 }
 
 export async function getInstance(id: number): Promise<FormInstanceDto> {
   const token = await getToken();
 
-  const r = await fetch(`${base}/form-instances/${id}`, 
+  const r = await fetch(`${base}/form-instances/${id}`,
     { credentials: 'include', headers: {
         Authorization: `Bearer ${token}`
       }, });
   if (!r.ok) throw new Error('Not found');
-  const etag = r.headers.get('ETag') ?? '';
   const body = await r.json();
+  const etag = extractEtag(r, body);
   return { ...body, etag };
 }
 
@@ -88,8 +105,8 @@ export async function saveSection(params: {
   );
   if (r.status === 409) throw new Error('Version conflict');
   if (!r.ok) throw new Error('Failed to save section');
-  const etag = r.headers.get('ETag') ?? '';
   const body = await r.json();
+  const etag = extractEtag(r, body);
   return { ...body, etag };
 }
 
@@ -111,8 +128,8 @@ export async function transitionInstance(params: {
   });
   if (r.status === 409) throw new Error('Version conflict');
   if (!r.ok) throw new Error('Transition failed');
-  const etag = r.headers.get('ETag') ?? '';
   const body = await r.json();
+  const etag = extractEtag(r, body);
   return { ...body, etag };
 }
 
