@@ -1,5 +1,5 @@
-import type { NavigatorScreenParams } from "@react-navigation/native";
 import type { FormSchema } from "@/components/formRenderer/fields/types";
+import type { NavigatorScreenParams } from "@react-navigation/native";
 
 export type DraftsStackParamList = {
   DraftsScreen: undefined;
@@ -32,5 +32,5 @@ export type RootStackParamList = {
     readOnly?: boolean | string;
   };
   FormBuilderScreen: undefined;
-  FormInstance: { id: number; sectionKey?: string };
+  FormInstance: { id: number | string; sectionKey?: string };
 };

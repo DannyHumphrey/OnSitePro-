@@ -1,6 +1,6 @@
-import { useEffect } from 'react';
-import { useNetworkStatus } from './useNetworkStatus';
-import { syncOnce } from '@/src/offline/syncEngine';
+import { syncOnce } from "@/services/offlineHelpers/syncEngine";
+import { useEffect } from "react";
+import { useNetworkStatus } from "./useNetworkStatus";
 
 export function useOfflineSync() {
   const isOnline = useNetworkStatus();

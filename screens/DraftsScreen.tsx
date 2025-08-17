@@ -4,28 +4,32 @@ import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import * as FileSystem from "expo-file-system";
 import { useCallback, useState } from "react";
 import { Alert, FlatList, StyleSheet, View } from "react-native";
-import { Card, FAB, IconButton, Portal, TextInput, useTheme } from "react-native-paper";
+import {
+  Card,
+  FAB,
+  IconButton,
+  Portal,
+  TextInput,
+  useTheme,
+} from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { spacing } from "@/constants/styles";
 import { useFormCounts } from "@/context/FormCountsContext";
+import { useNetworkStatus } from "@/hooks/useNetworkStatus";
 import { RootStackParamList } from "@/navigation/types";
-import {
-  getAllDrafts,
-  getDraftById,
-  type DraftForm,
-} from "@/services/draftService";
+import { getAllDrafts, getDraftById } from "@/services/draftService";
+import { createInstanceSmart } from "@/services/offlineHelpers/instanceSmart";
+import { LocalInstanceMeta } from "@/services/offlineHelpers/types";
 import { deleteLocalPhoto } from "@/services/photoService";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { createInstanceSmart } from "@/src/offline/instanceSmart";
-import { useNetworkStatus } from "@/hooks/useNetworkStatus";
 
 export default function DraftsScreen() {
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const [drafts, setDrafts] = useState<DraftForm[]>([]);
+  const [drafts, setDrafts] = useState<LocalInstanceMeta[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const { setCounts } = useFormCounts();
   const [fabOpen, setFabOpen] = useState(false);
@@ -43,26 +47,20 @@ export default function DraftsScreen() {
   useFocusEffect(
     useCallback(() => {
       loadDrafts();
-    }, [loadDrafts]),
+    }, [loadDrafts])
   );
 
   useFocusEffect(
-  useCallback(() => {
-    setScreenFocused(true);
-    return () => {
-      setScreenFocused(false);
-    };
-  }, [])
-);
+    useCallback(() => {
+      setScreenFocused(true);
+      return () => {
+        setScreenFocused(false);
+      };
+    }, [])
+  );
 
-  const handleResume = (draft: DraftForm) => {
-    navigation.navigate("FormScreen", {
-      schema: draft.schema,
-      formType: draft.formType,
-      formName: draft.name,
-      data: draft.data,
-      draftId: draft.id,
-    });
+  const handleResume = (draft: LocalInstanceMeta) => {
+    navigation.navigate("FormInstance", { id: draft.id });
   };
 
   const collectImageUris = (obj: any): string[] => {
@@ -107,21 +105,10 @@ export default function DraftsScreen() {
     ]);
   };
 
-  const filteredDrafts = drafts.filter((d) => {
-    const q = searchQuery.toLowerCase();
-    const address =
-      typeof d.data?.address === "string" ? d.data.address.toLowerCase() : "";
-    const matchesQuery =
-      d.name.toLowerCase().includes(q) ||
-      d.formType.toLowerCase().includes(q) ||
-      address.includes(q);
-    return matchesQuery;
-  });
-
-  const renderItem = ({ item }: { item: DraftForm }) => (
+  const renderItem = ({ item }: { item: LocalInstanceMeta }) => (
     <Card style={styles.draftItem} onPress={() => handleResume(item)}>
       <Card.Title
-        title={item.name}
+        title={item.formType}
         right={() => (
           <View style={styles.editButtons}>
             <IconButton
@@ -134,7 +121,6 @@ export default function DraftsScreen() {
         )}
       />
       <Card.Content>
-        <ThemedText>Form Type: {item.formType}</ThemedText>
         <ThemedText style={styles.dateText}>
           Date Created: {new Date(item.createdAt).toLocaleDateString()}{" "}
           {new Date(item.createdAt).toLocaleTimeString()}
@@ -157,13 +143,11 @@ export default function DraftsScreen() {
         />
       </View>
       <FlatList
-        data={filteredDrafts}
+        data={drafts}
         keyExtractor={(item) => item.id}
         renderItem={renderItem}
         contentContainerStyle={
-          filteredDrafts.length === 0
-            ? styles.emptyContainer
-            : styles.listContainer
+          drafts.length === 0 ? styles.emptyContainer : styles.listContainer
         }
         ListEmptyComponent={
           <ThemedView style={styles.emptyContainer}>
@@ -171,44 +155,43 @@ export default function DraftsScreen() {
           </ThemedView>
         }
       />
-      {screenFocused && 
+      {screenFocused && (
         <Portal>
-            <FAB.Group
-              testID="fab-group-create"
-              open={fabOpen}
-              visible={screenFocused}
-              icon={fabOpen ? "close" : "plus"}
-              actions={forms.map((f) => ({
-                icon: f.icon || "file-plus",
-                label: f.label,
-                onPress: async () => {
-                  setFabOpen(false);
-                  try {
-                    const created = await createInstanceSmart(
-                      f.formType,
-                      f.version,
-                      {},
-                      isOnline,
-                    );
-                    navigation.navigate("FormInstance", { id: created.id });
-                  } catch {
-                    Alert.alert("Error", "Failed to create form instance");
-                  }
-                },
-                accessibilityLabel: `Add ${f.label}`,
-                testID: `fab-action-${f.key}`,
-                small: false,
-              }))}
-              onStateChange={({ open }) => setFabOpen(open)}
-              onPress={() => {
-              }}
-              // Use container style, not fabStyle
-              style={styles.fabGroup}
-              backdropColor="transparent"
-              accessibilityLabel="Create new item"
-            />
+          <FAB.Group
+            testID="fab-group-create"
+            open={fabOpen}
+            visible={screenFocused}
+            icon={fabOpen ? "close" : "plus"}
+            actions={forms.map((f) => ({
+              icon: f.icon || "file-plus",
+              label: f.label,
+              onPress: async () => {
+                setFabOpen(false);
+                try {
+                  const created = await createInstanceSmart(
+                    f.formType,
+                    f.version,
+                    {},
+                    isOnline
+                  );
+                  navigation.navigate("FormInstance", { id: created.id });
+                } catch {
+                  Alert.alert("Error", "Failed to create form instance");
+                }
+              },
+              accessibilityLabel: `Add ${f.label}`,
+              testID: `fab-action-${f.key}`,
+              small: false,
+            }))}
+            onStateChange={({ open }) => setFabOpen(open)}
+            onPress={() => {}}
+            // Use container style, not fabStyle
+            style={styles.fabGroup}
+            backdropColor="transparent"
+            accessibilityLabel="Create new item"
+          />
         </Portal>
-      }
+      )}
     </SafeAreaView>
   );
 }
@@ -257,11 +240,11 @@ const styles = StyleSheet.create({
   dateText: {
     marginBottom: 8,
   },
-    fabGroup: {
+  fabGroup: {
     position: "absolute",
     right: 16,
     bottom: 40,
-    zIndex: 1000,    // helps on iOS + Android
-    elevation: 10,   // Android stacking
+    zIndex: 1000, // helps on iOS + Android
+    elevation: 10, // Android stacking
   },
 });

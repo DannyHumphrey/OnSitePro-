@@ -8,6 +8,7 @@ export type LocalInstanceMeta = {
   etag: string;
   isLocal: boolean;
   createdAt: string;
+  schema: any;
 };
 
 export type CreateJob = {
