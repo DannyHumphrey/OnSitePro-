@@ -1,6 +1,7 @@
 import { getInstance } from "@/api/formsApi";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { K } from "./keys";
+import { getFormTemplatesCached } from "./templatesCache";
 import { LocalInstanceMeta } from "./types";
 
 export async function resolveToServerId(
@@ -23,6 +24,20 @@ export async function getInstanceSmart(
   ) {
     try {
       const dto = await getInstance(Number(resolved));
+      let schema: any = [];
+      let workflow: any = {};
+      try {
+        const defs = await getFormTemplatesCached(true);
+        const def = defs.find(
+          (d: any) =>
+            d.formDefinitionId === dto.formDefinitionId ||
+            (d.formType === (dto as any).formType &&
+              ((dto as any).formVersion == null ||
+                d.version === (dto as any).formVersion))
+        );
+        schema = def?.schema ?? [];
+        workflow = def?.workflow ?? {};
+      } catch {}
       const meta: LocalInstanceMeta = {
         id: String(resolved),
         formType: (dto as any).formType || "",
@@ -33,7 +48,8 @@ export async function getInstanceSmart(
         etag: dto.etag,
         isLocal: false,
         createdAt: new Date().toISOString(),
-        schema: "",
+        schema,
+        workflow,
       };
       await AsyncStorage.setItem(
         K.InstanceMeta(resolved),
@@ -48,8 +64,27 @@ export async function getInstanceSmart(
       const metaRaw = await AsyncStorage.getItem(K.InstanceMeta(resolved));
       const dataRaw = await AsyncStorage.getItem(K.InstanceData(resolved));
       if (!metaRaw) return null;
+      let meta = JSON.parse(metaRaw) as LocalInstanceMeta;
+      if (!meta.schema || (Array.isArray(meta.schema) && meta.schema.length === 0)) {
+        try {
+          const defs = await getFormTemplatesCached(false);
+          const def = defs.find(
+            (d: any) =>
+              d.formDefinitionId === meta.formDefinitionId ||
+              (d.formType === meta.formType &&
+                (meta.formVersion == null || d.version === meta.formVersion))
+          );
+          if (def) {
+            meta = { ...meta, schema: def.schema ?? [], workflow: def.workflow ?? {} };
+            await AsyncStorage.setItem(
+              K.InstanceMeta(resolved),
+              JSON.stringify(meta)
+            );
+          }
+        } catch {}
+      }
       return {
-        ...(JSON.parse(metaRaw) as LocalInstanceMeta),
+        ...meta,
         data: dataRaw ? JSON.parse(dataRaw) : {},
       };
     }

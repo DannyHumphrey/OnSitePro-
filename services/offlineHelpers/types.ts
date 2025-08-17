@@ -9,6 +9,7 @@ export type LocalInstanceMeta = {
   isLocal: boolean;
   createdAt: string;
   schema: any;
+  workflow?: any;
 };
 
 export type CreateJob = {

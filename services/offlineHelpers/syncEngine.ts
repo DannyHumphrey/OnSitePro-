@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createInstance, saveSection, getInstance } from '@/api/formsApi';
 import { K } from './keys';
 import type { CreateJob, LocalInstanceMeta } from './types';
+import { getFormTemplatesCached } from './templatesCache';
 
 async function drainPatchQueue(id: number, meta: LocalInstanceMeta) {
   const pqKey = K.PatchQueue(id);
@@ -57,27 +58,42 @@ export async function syncOnce() {
 
       const metaRaw = await AsyncStorage.getItem(K.InstanceMeta(job.tmpId));
       const dataRaw = await AsyncStorage.getItem(K.InstanceData(job.tmpId));
-      const meta: LocalInstanceMeta = metaRaw
-        ? {
-            ...(JSON.parse(metaRaw) as LocalInstanceMeta),
-            id: String(serverId),
-            isLocal: false,
-            etag: created.etag,
-            version: created.version,
-            currentState: created.currentState,
-            formDefinitionId: created.formDefinitionId ?? null,
-          }
-        : {
-            id: String(serverId),
-            formType: job.formType,
-            formVersion: job.formVersion ?? null,
-            formDefinitionId: created.formDefinitionId ?? null,
-            currentState: created.currentState,
-            version: created.version,
-            etag: created.etag,
-            isLocal: false,
-            createdAt: new Date().toISOString(),
-          };
+      let meta: LocalInstanceMeta;
+      if (metaRaw) {
+        meta = {
+          ...(JSON.parse(metaRaw) as LocalInstanceMeta),
+          id: String(serverId),
+          isLocal: false,
+          etag: created.etag,
+          version: created.version,
+          currentState: created.currentState,
+          formDefinitionId: created.formDefinitionId ?? null,
+        };
+      } else {
+        let schema: any = [];
+        let workflow: any = {};
+        try {
+          const defs = await getFormTemplatesCached(true);
+          const def = defs.find(
+            (d: any) => d.formDefinitionId === created.formDefinitionId
+          );
+          schema = def?.schema ?? [];
+          workflow = def?.workflow ?? {};
+        } catch {}
+        meta = {
+          id: String(serverId),
+          formType: job.formType,
+          formVersion: job.formVersion ?? null,
+          formDefinitionId: created.formDefinitionId ?? null,
+          currentState: created.currentState,
+          version: created.version,
+          etag: created.etag,
+          isLocal: false,
+          createdAt: new Date().toISOString(),
+          schema,
+          workflow,
+        };
+      }
       await AsyncStorage.setItem(K.InstanceMeta(serverId), JSON.stringify(meta));
       if (dataRaw) await AsyncStorage.setItem(K.InstanceData(serverId), dataRaw);
 

@@ -1,11 +1,7 @@
-import {
-  getFormTemplates,
-  getInstance,
-  saveSection,
-  transitionInstance,
-} from "@/api/formsApi";
+import { getInstance, saveSection, transitionInstance } from "@/api/formsApi";
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
 import { getToken } from "@/services/authService";
+import { getInstanceSmart } from "@/services/offlineHelpers/getInstanceSmart";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { applyPatch } from "fast-json-patch";
 import jwtDecode from "jwt-decode";
@@ -18,7 +14,6 @@ import { InstanceFormRenderer } from "../components/formRenderer/InstnaceFormRen
 export default function FormInstanceScreen({ route, navigation }: any) {
   const { id, sectionKey: initialSection } = route.params;
   const [instance, setInstance] = useState<any>(null);
-  const [defs, setDefs] = useState<any[]>([]);
   const [activeSection, setActiveSection] = useState<string | undefined>(
     initialSection
   );
@@ -31,12 +26,8 @@ export default function FormInstanceScreen({ route, navigation }: any) {
 
   useEffect(() => {
     (async () => {
-      const [inst, templates] = await Promise.all([
-        getInstance(id),
-        getFormTemplates(),
-      ]);
+      const inst = await getInstanceSmart(id);
       setInstance(inst);
-      setDefs(templates);
       const token = await getToken();
       if (token) {
         try {
@@ -58,16 +49,8 @@ export default function FormInstanceScreen({ route, navigation }: any) {
     })();
   }, [id]);
 
-  const def = useMemo(() => {
-    if (!instance || !defs.length) return null;
-    return (
-      defs.find((d: any) => d.formDefinitionId === instance.formDefinitionId) ||
-      defs.find((d: any) => d.formType === instance.formType)
-    );
-  }, [instance, defs]);
-
-  const workflow = def?.workflow || {};
-  const schema = def?.schema || [];
+  const workflow = instance?.workflow || {};
+  const schema = instance?.schema || [];
 
   const editableSections: string[] = useMemo(() => {
     const secs = Array.isArray(workflow.sections) ? workflow.sections : [];
@@ -231,7 +214,7 @@ export default function FormInstanceScreen({ route, navigation }: any) {
     <View style={{ flex: 1 }}>
       <Appbar.Header>
         <Appbar.BackAction onPress={() => navigation.goBack()} />
-        <Appbar.Content title={def?.name ?? "Form"} />
+        <Appbar.Content title={instance?.formType ?? "Form"} />
       </Appbar.Header>
 
       <InstanceFormRenderer
