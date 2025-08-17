@@ -16,6 +16,7 @@ import * as SecureStore from "./services/secureStoreWrapper";
 import { darkTheme, lightTheme } from "@/constants/theme";
 import { FormCountsProvider, useFormCounts } from "@/context/FormCountsContext";
 import { useColorScheme } from "@/hooks/useColorScheme";
+import { useOfflineSync } from "@/hooks/useOfflineSync";
 import type {
   DraftsStackParamList,
   RootStackParamList,
@@ -109,6 +110,7 @@ export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
   const [sessionExpired, setSessionExpired] = useState(false);
   const wasOffline = useRef(false);
+  useOfflineSync();
 
   useEffect(() => {
     async function loadStatus() {

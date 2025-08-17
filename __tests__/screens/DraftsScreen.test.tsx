@@ -10,6 +10,10 @@ jest.mock('@/services/draftService', () => ({
   getDraftById: jest.fn(),
 }));
 
+jest.mock('@/hooks/useNetworkStatus', () => ({
+  useNetworkStatus: () => true,
+}));
+
 jest.mock('@/hooks/useAvailableForms', () => ({
   useAvailableForms: () => [
     { key: 'TEST', label: 'Test Form', icon: 'file-plus', formType: 'TEST', version: 1 },

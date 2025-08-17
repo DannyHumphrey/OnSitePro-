@@ -1,4 +1,3 @@
-import { createInstance } from "@/api/formsApi";
 import { useAvailableForms } from "@/hooks/useAvailableForms";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
@@ -20,6 +19,8 @@ import {
 } from "@/services/draftService";
 import { deleteLocalPhoto } from "@/services/photoService";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { createInstanceSmart } from "@/src/offline/instanceSmart";
+import { useNetworkStatus } from "@/hooks/useNetworkStatus";
 
 export default function DraftsScreen() {
   const navigation =
@@ -31,6 +32,7 @@ export default function DraftsScreen() {
   const [screenFocused, setScreenFocused] = useState(false);
   const forms = useAvailableForms();
   const theme = useTheme();
+  const isOnline = useNetworkStatus();
 
   const loadDrafts = useCallback(async () => {
     const data = await getAllDrafts();
@@ -182,8 +184,13 @@ export default function DraftsScreen() {
                 onPress: async () => {
                   setFabOpen(false);
                   try {
-                    const created = await createInstance(f.formType, f.version);
-                    navigation.navigate("FormInstance", { id: created.formInstanceId });
+                    const created = await createInstanceSmart(
+                      f.formType,
+                      f.version,
+                      {},
+                      isOnline,
+                    );
+                    navigation.navigate("FormInstance", { id: created.id });
                   } catch {
                     Alert.alert("Error", "Failed to create form instance");
                   }
