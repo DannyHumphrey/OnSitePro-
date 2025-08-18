@@ -4,14 +4,7 @@ import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import * as FileSystem from "expo-file-system";
 import { useCallback, useState } from "react";
 import { Alert, FlatList, StyleSheet, View } from "react-native";
-import {
-  Card,
-  FAB,
-  IconButton,
-  Portal,
-  TextInput,
-  useTheme,
-} from "react-native-paper";
+import { Card, FAB, IconButton, Portal, TextInput } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { ThemedText } from "@/components/ThemedText";
@@ -35,7 +28,6 @@ export default function DraftsScreen() {
   const [fabOpen, setFabOpen] = useState(false);
   const [screenFocused, setScreenFocused] = useState(false);
   const forms = useAvailableForms();
-  const theme = useTheme();
   const isOnline = useNetworkStatus();
 
   const loadDrafts = useCallback(async () => {
@@ -128,8 +120,6 @@ export default function DraftsScreen() {
       </Card.Content>
     </Card>
   );
-
-  const formTypes = Array.from(new Set(drafts.map((d) => d.formType)));
 
   return (
     <SafeAreaView style={{ flex: 1 }}>

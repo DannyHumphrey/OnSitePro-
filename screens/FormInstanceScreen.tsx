@@ -11,6 +11,8 @@ import { Appbar, Button } from "react-native-paper";
 import { v4 as uuidv4 } from "uuid";
 import { InstanceFormRenderer } from "../components/formRenderer/InstnaceFormRenderer";
 
+const roleKey = "http://schemas.microsoft.com/ws/2008/06/identity/claims/role";
+
 export default function FormInstanceScreen({ route, navigation }: any) {
   const { id, sectionKey: initialSection } = route.params;
   const [instance, setInstance] = useState<any>(null);
@@ -32,18 +34,9 @@ export default function FormInstanceScreen({ route, navigation }: any) {
       if (token) {
         try {
           const decoded = jwtDecode<{
-            ["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"]?: string[];
+            [roleKey]?: string[];
           }>(token);
-          if (
-            decoded[
-              "http://schemas.microsoft.com/ws/2008/06/identity/claims/role"
-            ]
-          )
-            setUserRoles(
-              decoded[
-                "http://schemas.microsoft.com/ws/2008/06/identity/claims/role"
-              ]
-            );
+          if (decoded[roleKey]) setUserRoles(decoded[roleKey]);
         } catch {}
       }
     })();
@@ -110,21 +103,6 @@ export default function FormInstanceScreen({ route, navigation }: any) {
       drainQueue().catch(() => {});
     }
   }, [isOnline]);
-
-  function localUpdate(path: (string | number)[], value: any) {
-    setInstance((prev: any) => {
-      if (!prev) return prev;
-      const data = { ...(prev.data || {}) };
-      let curr: any = data;
-      for (let i = 0; i < path.length - 1; i++) {
-        const key = String(path[i]);
-        curr[key] = curr[key] ? { ...curr[key] } : {};
-        curr = curr[key];
-      }
-      curr[String(path[path.length - 1])] = value;
-      return { ...prev, data };
-    });
-  }
 
   const availableTransitions = useMemo(() => {
     const t = Array.isArray(workflow.transitions) ? workflow.transitions : [];
